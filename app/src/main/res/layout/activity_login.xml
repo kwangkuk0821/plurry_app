@@ -69,6 +69,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dip"
+                android:onClick="mOnClick"
                 android:text="Login"/>
             <!-- Link to Registration Screen -->
             <TextView android:id="@+id/link_to_register"
@@ -79,7 +80,9 @@
                 android:text="New to Twitter? Register here"
                 android:gravity="center"
                 android:textSize="20dip"
-                android:textColor="#0b84aa"/>
+                android:textColor="#0b84aa"
+                android:onClick="mOnClick"
+                android:clickable="true"/>
 
         </LinearLayout>
         <!-- Login Form Ends -->
