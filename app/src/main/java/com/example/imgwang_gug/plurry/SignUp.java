@@ -11,7 +11,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -26,85 +25,44 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+public class SignUp extends AppCompatActivity {
 
-public class Login extends AppCompatActivity {
-
-    private EditText email;
-    private EditText password;
-    private TextView signup;
     private static HttpURLConnection conn;
     private SharedPreferences pref;
     private final String prefName = "plurry";
+    private EditText email;
+    private EditText password;
+    private EditText password_confirmation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_sign_up);
 
-        email = (EditText) findViewById(R.id.sign_in_email);
-        password = (EditText) findViewById(R.id.sign_in_password);
-        signup = (TextView) findViewById(R.id.link_to_register);
-        //자동 로그인(secret_token이 있고 일치시에)
-        String token = getPreferences("secret_token");
-        Log.d("token", token);
-        if(!token.isEmpty()) {
-            new SignInTask().execute(
-                    "http://plurry.cycorld.com:3000/mobile/users/sign_in_token",
-                    "secret_token=" + token
-            );
-        }
+        email = (EditText) findViewById(R.id.sign_up_email);
+        password = (EditText) findViewById(R.id.sign_up_password);
+        password_confirmation = (EditText) findViewById(R.id.sign_up_password_confirmation);
     }
-    //클릭 리스너
+
     public void mOnClick(View v) {
         switch (v.getId()) {
-            case R.id.sign_in_btn:
-                new SignInTask().execute(
-                        "http://plurry.cycorld.com:3000/mobile/users/sign_in",
-                        "email=" + email.getText().toString() + "&password=" + password.getText().toString()
+            case R.id.sign_up_btn:
+                new SignUpTask().execute(
+                        "http://plurry.cycorld.com:3000/mobile/users/sign_up",
+                        "email=" + email.getText().toString() + "&password=" + password.getText().toString() + "&password_confirmation=" + password_confirmation.getText().toString()
                 );
                 break;
-            case R.id.link_to_register:
-                signup.setClickable(false);
-                Intent i = new Intent(Login.this, SignUp.class);
+            case R.id.link_to_login:
+                Intent i = new Intent(SignUp.this, Login.class);
                 startActivity(i);
+                SignUp.this.finish();
                 break;
         }
     }
 
-    //값 불러오기
-    private String getPreferences(String key) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        String data = pref.getString(key, "");
-        return data;
-    }
+    public class SignUpTask extends AsyncTask<String, Void, String> {
 
-    // 값 저장하기
-    private void savePreferences(String key, String value) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.putString(key, value);
-        editor.commit();
-    }
-
-    // 값(Key Data) 삭제하기
-    private void removePreferences(String key) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.remove(key);
-        editor.commit();
-    }
-
-    // 값(ALL Data) 삭제하기
-    private void removeAllPreferences() {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.clear();
-        editor.commit();
-    }
-
-    public class SignInTask extends AsyncTask<String, Void, String> {
-
-        ProgressDialog loginPending = new ProgressDialog(Login.this);
+        ProgressDialog loginPending = new ProgressDialog(SignUp.this);
 
         public String jsonConverter(String str) {
             str = str.replace("\\", "");
@@ -118,7 +76,7 @@ public class Login extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             loginPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            loginPending.setMessage("로그인 중 입니다...");
+            loginPending.setMessage("회원가입 중 입니다...");
 
             loginPending.show();
             super.onPreExecute();
@@ -184,24 +142,15 @@ public class Login extends AppCompatActivity {
                 resultJSON = new JSONObject(data);
                 result = resultJSON.getString("result");
                 what = resultJSON.getString("what");
-                if (what.equals("sign_in")) {
-                    if (resultJSON.has("secret_token")) {
-                        Toast.makeText(Login.this, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                        secret_token = resultJSON.getString("secret_token");
-                        savePreferences("secret_token", secret_token);
-                        Intent i = new Intent(Login.this, MainActivity.class);
-                        startActivity(i);
-                        Login.this.finish();
-                    } else {
-                        Toast.makeText(Login.this, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
-                    }
-                } else if(what.equals("sign_in_token")) {
-                    if(result.equals("success")) {
-                        Toast.makeText(Login.this, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                        Intent i = new Intent(Login.this, MainActivity.class);
-                        startActivity(i);
-                        Login.this.finish();
-                    }
+                if (resultJSON.has("secret_token")) {
+                    Toast.makeText(SignUp.this, "회원가입에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                    secret_token = resultJSON.getString("secret_token");
+                    savePreferences("secret_token", secret_token);
+                    Intent i = new Intent(SignUp.this, MainActivity.class);
+                    startActivity(i);
+                    SignUp.this.finish();
+                } else {
+                    Toast.makeText(SignUp.this, "회원가입에 실패하였습니다.", Toast.LENGTH_SHORT).show();
                 }
                 Log.d("task_result", "result = " + resultJSON);
             } catch (JSONException e) {
@@ -210,11 +159,41 @@ public class Login extends AppCompatActivity {
         }
     }
 
+    //값 불러오기
+    private String getPreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        String data = pref.getString(key, "");
+        return data;
+    }
+
+    // 값 저장하기
+    private void savePreferences(String key, String value) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    // 값(Key Data) 삭제하기
+    private void removePreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.remove(key);
+        editor.commit();
+    }
+
+    // 값(ALL Data) 삭제하기
+    private void removeAllPreferences() {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.clear();
+        editor.commit();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_login, menu);
+        getMenuInflater().inflate(R.menu.menu_sign_up, menu);
         return true;
     }
 

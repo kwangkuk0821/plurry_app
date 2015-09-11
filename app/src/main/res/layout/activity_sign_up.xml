@@ -10,7 +10,7 @@
         android:background="#ffffff">
 
         <!--  Header  Starts-->
-        <LinearLayout android:id="@+id/sign_in_header"
+        <LinearLayout android:id="@+id/sign_up_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@layout/header_gradient"
@@ -25,7 +25,7 @@
         </LinearLayout>
         <!--  Header Ends -->
         <!-- Footer Start -->
-        <LinearLayout android:id="@+id/sign_in_footer"
+        <LinearLayout android:id="@+id/sign_up_footer"
             android:layout_width="match_parent"
             android:layout_height="90dip"
             android:background="@layout/footer_repeat"
@@ -41,46 +41,58 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dip"
-            android:layout_below="@id/sign_in_header">
+            android:layout_below="@id/sign_up_header">
             <!--  Email Label -->
             <TextView android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#372c24"
                 android:text="Email"/>
-            <EditText android:id="@+id/sign_in_email"
+            <EditText android:id="@+id/sign_up_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dip"
                 android:layout_marginBottom="20dip"
-                android:inputType="textWebEmailAddress"
                 android:hint="이메일 입력..."
+                android:inputType="textWebEmailAddress"
                 android:singleLine="true"/>
             <!--  Password Label -->
             <TextView android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#372c24"
                 android:text="Password"/>
-            <EditText android:id="@+id/sign_in_password"
+            <EditText android:id="@+id/sign_up_password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dip"
                 android:singleLine="true"
                 android:hint="비밀번호 입력..."
                 android:password="true"/>
+            <!-- Password Confirmation Label -->
+            <TextView android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#372c24"
+                android:text="Password_Confirmation"/>
+            <EditText android:id="@+id/sign_up_password_confirmation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dip"
+                android:singleLine="true"
+                android:hint="비밀번호 재입력..."
+                android:password="true"/>
             <!-- Login button -->
-            <Button android:id="@+id/sign_in_btn"
+            <Button android:id="@+id/sign_up_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dip"
                 android:onClick="mOnClick"
-                android:text="로그인"/>
+                android:text="회원가입"/>
             <!-- Link to Registration Screen -->
-            <TextView android:id="@+id/link_to_register"
+            <TextView android:id="@+id/link_to_login"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="40dip"
                 android:layout_marginBottom="40dip"
-                android:text="처음이세요? 여기서 회원가입"
+                android:text="회원이라면 로그인하세요."
                 android:gravity="center"
                 android:textSize="20dip"
                 android:textColor="#0b84aa"

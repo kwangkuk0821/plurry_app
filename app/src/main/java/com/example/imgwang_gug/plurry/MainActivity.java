@@ -1,6 +1,7 @@
 package com.example.imgwang_gug.plurry;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -29,12 +30,22 @@ public class MainActivity extends AppCompatActivity {
     private WebSocketClient client;
     private JoystickView joystick;
     private TextView joystick_debug;
+    private SharedPreferences pref;
+    private final String prefName = "plurry";
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        String token = getPreferences("secret_token");
+        if(token.isEmpty()) {
+            Intent i = new Intent(this, Login.class);
+            startActivity(i);
+            this.finish();
+        }
 
         feed_button = (Button)findViewById(R.id.feed_btn);
         feed_amount = (SeekBar)findViewById(R.id.feed_amount);
@@ -96,6 +107,20 @@ public class MainActivity extends AppCompatActivity {
         joystick.setOnJoystickMoveListener(new OnJoystickMoveListener() {
             @Override
             public void onValueChanged(int angle, int power, int direction, float x, float y) {
+                try {
+                    JSONObject left = new JSONObject();
+                    JSONObject right = new JSONObject();
+                    left.put("cmd", 8);
+                    right.put("cmd", 9);
+                    int left_speed = (int) (y + x + 50);
+                    int right_speed = (int) (y - x + 50);
+                    left.put("speed", left_speed);
+                    right.put("speed", right_speed);
+                    client.send(left.toString());
+                    client.send(right.toString());
+                } catch (JSONException e) {
+                    Log.e("MYAPP", "unexpected JSON exception", e);
+                }
                 joystick_debug.setText("x : " + x + " y : " + y);
             }
         }, JoystickView.DEFAULT_LOOP_INTERVAL);
@@ -138,5 +163,35 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+    //값 불러오기
+    private String getPreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        String data = pref.getString(key, "");
+        return data;
+    }
+
+    // 값 저장하기
+    private void savePreferences(String key, String value) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    // 값(Key Data) 삭제하기
+    private void removePreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.remove(key);
+        editor.commit();
+    }
+
+    // 값(ALL Data) 삭제하기
+    private void removeAllPreferences() {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.clear();
+        editor.commit();
     }
 }
