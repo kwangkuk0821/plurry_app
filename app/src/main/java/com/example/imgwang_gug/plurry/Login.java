@@ -189,7 +189,7 @@ public class Login extends AppCompatActivity {
                         Toast.makeText(Login.this, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                         secret_token = resultJSON.getString("secret_token");
                         savePreferences("secret_token", secret_token);
-                        Intent i = new Intent(Login.this, MainActivity.class);
+                        Intent i = new Intent(Login.this, GroupList.class);
                         startActivity(i);
                         Login.this.finish();
                     } else {
@@ -198,7 +198,7 @@ public class Login extends AppCompatActivity {
                 } else if(what.equals("sign_in_token")) {
                     if(result.equals("success")) {
                         Toast.makeText(Login.this, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                        Intent i = new Intent(Login.this, MainActivity.class);
+                        Intent i = new Intent(Login.this, GroupList.class);
                         startActivity(i);
                         Login.this.finish();
                     }

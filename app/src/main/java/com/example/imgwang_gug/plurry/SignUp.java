@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.acl.Group;
 
 public class SignUp extends AppCompatActivity {
 
@@ -62,7 +63,7 @@ public class SignUp extends AppCompatActivity {
 
     public class SignUpTask extends AsyncTask<String, Void, String> {
 
-        ProgressDialog loginPending = new ProgressDialog(SignUp.this);
+        ProgressDialog signupPending = new ProgressDialog(SignUp.this);
 
         public String jsonConverter(String str) {
             str = str.replace("\\", "");
@@ -75,10 +76,10 @@ public class SignUp extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            loginPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            loginPending.setMessage("회원가입 중 입니다...");
+            signupPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            signupPending.setMessage("회원가입 중 입니다...");
 
-            loginPending.show();
+            signupPending.show();
             super.onPreExecute();
         }
 
@@ -132,7 +133,7 @@ public class SignUp extends AppCompatActivity {
         }
 
         protected void onPostExecute(String data) {
-            loginPending.dismiss();
+            signupPending.dismiss();
             // result is what you got from your connection
             JSONObject resultJSON = null;
             String result = null;
@@ -146,7 +147,7 @@ public class SignUp extends AppCompatActivity {
                     Toast.makeText(SignUp.this, "회원가입에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                     secret_token = resultJSON.getString("secret_token");
                     savePreferences("secret_token", secret_token);
-                    Intent i = new Intent(SignUp.this, MainActivity.class);
+                    Intent i = new Intent(SignUp.this, GroupList.class);
                     startActivity(i);
                     SignUp.this.finish();
                 } else {

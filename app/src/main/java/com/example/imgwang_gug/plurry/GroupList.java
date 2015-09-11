@@ -10,13 +10,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
 
-import com.example.imgwang_gug.plurry.websocket.WebSocketClient;
-import com.example.imgwang_gug.plurry.joystick.JoystickView;
-import com.example.imgwang_gug.plurry.joystick.JoystickView.OnJoystickMoveListener;
-
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,152 +24,44 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
+import java.security.acl.Group;
+import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class GroupList extends AppCompatActivity {
 
-    private Button feed_button;
     private static HttpURLConnection conn;
-    private SeekBar feed_amount;
-    private TextView feed_text;
-    private WebSocketClient[] client;
-    private JoystickView joystick;
-    private TextView joystick_debug;
     private SharedPreferences pref;
     private final String prefName = "plurry";
-    private String token;
-    private final int feed_product = 1;
-    private final int move_product = 2;
+    private ListView group_list_view;
+    private ArrayList<String> group_list;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_group_list);
+        group_list_view = (ListView) findViewById(R.id.group_list);
 
-        Bundle b = getIntent().getExtras();
-        String group = b.getString("group");
-
-        token = getPreferences("secret_token");
+        String token = getPreferences("secret_token");
         if (token.isEmpty()) {
             Intent i = new Intent(this, Login.class);
             startActivity(i);
             this.finish();
         } else {
             new requestTask().execute(
-                    "http://plurry.cycorld.com:3000/mobile/" + group + "/products",
+                    "http://plurry.cycorld.com:3000/mobile/groups",
                     "secret_token=" + token
             );
         }
 
-        feed_button = (Button) findViewById(R.id.feed_btn);
-        feed_amount = (SeekBar) findViewById(R.id.feed_amount);
-        feed_text = (TextView) findViewById(R.id.feed_text);
 
-        feed_amount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                feed_text.setText(Integer.toString(progress + 1));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-
-        joystick = (JoystickView) findViewById(R.id.joystickView);
-        joystick_debug = (TextView) findViewById(R.id.joystick_debug);
-
-        // Listener of events, it'll return the angle in graus and power in percents
-        // return to the direction of the moviment
-        joystick.setOnJoystickMoveListener(new OnJoystickMoveListener() {
-            @Override
-            public void onValueChanged(int angle, int power, int direction, float x, float y) {
-                try {
-                    JSONObject left = new JSONObject();
-                    JSONObject right = new JSONObject();
-                    left.put("cmd", 8);
-                    right.put("cmd", 9);
-                    int left_speed = (int) (y + x + 50);
-                    int right_speed = (int) (y - x + 50);
-                    left.put("speed", left_speed);
-                    right.put("speed", right_speed);
-                    client[move_product].send(left.toString());
-                    client[move_product].send(right.toString());
-                } catch (JSONException e) {
-                    Log.e("MYAPP", "unexpected JSON exception", e);
-                }
-                joystick_debug.setText("x : " + x + " y : " + y);
-            }
-        }, JoystickView.DEFAULT_LOOP_INTERVAL);
-
-    }
-
-    public void mOnClick(View v) {
-        switch (v.getId()) {
-            case R.id.feed_btn:
-                int progress = feed_amount.getProgress();
-                try {
-                    JSONObject cmd = new JSONObject();
-                    cmd.put("cmd", 6);
-                    cmd.put("amount", Integer.toString(progress + 1));
-                    client[feed_product].send(cmd.toString());
-                } catch (JSONException e) {
-                    Log.e("MYAPP", "unexpected JSON exception", e);
-                }
-                break;
-        }
-    }
-
-    public void websocket(String product_id, int type) {
-        List<BasicNameValuePair> extraHeaders = Arrays.asList(
-                new BasicNameValuePair("Cookie", "session=" + token)
-        );
-        client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
-            @Override
-            public void onConnect() {
-                Log.d("Connect", "Connected!");
-                Log.d("Connect2", client.toString());
-            }
-
-            @Override
-            public void onMessage(String message) {
-                Log.d("Message", String.format("Got string message! %s", message));
-            }
-
-            @Override
-            public void onMessage(byte[] data) {
-                Log.d("byte", String.format("Got binary message! %s", ("" + data)));
-            }
-
-            @Override
-            public void onDisconnect(int code, String reason) {
-                Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
-            }
-
-            @Override
-            public void onError(Exception error) {
-                Log.e("Error", "Error!", error);
-            }
-
-        }, extraHeaders);
-
-        client[type].connect();
     }
 
     public class requestTask extends AsyncTask<String, Void, String> {
 
-        ProgressDialog dataPending = new ProgressDialog(MainActivity.this);
+        ProgressDialog dataPending = new ProgressDialog(GroupList.this);
 
         public String jsonConverter(String str) {
             str = str.replace("\\", "");
@@ -249,29 +139,42 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(String data) {
             dataPending.dismiss();
+            Log.d("Main", data);
             // result is what you got from your connection
-            if(!data.equals("fail")) {
+            if (!data.equals("fail")) {
                 JSONObject resultJSON = null;
                 String result = null;
                 String what = null;
-                JSONArray products = null;
+                JSONArray GroupList = null;
                 try {
                     resultJSON = new JSONObject(data);
-                    products = resultJSON.getJSONArray("data");
-                    client = new WebSocketClient[4];
-                    for(int i = 0; i < products.length();i++) {
-                        Log.d("class", "" + products.get(i).getClass());
-                        JSONObject product = (JSONObject) products.get(i);
-                        Log.d("product", "result = " + product.getString("product_id"));
-                        websocket(product.getString("product_id"), product.getInt("product_type"));
+                    GroupList = resultJSON.getJSONArray("data");
+                    group_list = new ArrayList<String>();
+                    if (GroupList != null) {
+                        for (int i = 0; i < GroupList.length(); i++) {
+                            group_list.add(GroupList.get(i).toString());
+                        }
                     }
+                    final ArrayAdapter<String> GroupAdapter = new ArrayAdapter<String>(
+                            GroupList.this, android.R.layout.simple_list_item_1, group_list);
+                    AdapterView.OnItemClickListener mItemClickListener = new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView parent, View view, int position, long id) {
+                            String selectGroup = group_list.get(position);
+                            Intent i = new Intent(GroupList.this, MainActivity.class);
+                            i.putExtra("group", selectGroup);
+                            startActivity(i);
+                        }
+                    };
+                    group_list_view.setAdapter(GroupAdapter);
+                    group_list_view.setOnItemClickListener(mItemClickListener);
+                    //true => Log.d("data", "result = " + resultJSON.get("data").getClass().equals(JSONArray.class));
                     Log.d("task_result", "result = " + resultJSON);
-                    Log.d("websockes", "result = " + client);
                 } catch (JSONException e) {
                     Log.d("JSONException", "ERROR " + e.getMessage());
                 }
             } else {
-                Toast.makeText(MainActivity.this, "데이터를 불러오기를 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupList.this, "데이터를 불러오기를 실패하였습니다.", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -279,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_group_list, menu);
         return true;
     }
 

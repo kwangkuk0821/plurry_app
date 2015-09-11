@@ -31,6 +31,10 @@
             android:name=".SignUp"
             android:label="@string/title_activity_sign_up" >
         </activity>
+        <activity
+            android:name=".GroupList"
+            android:label="@string/title_activity_group_list" >
+        </activity>
     </application>
 
 </manifest>
