@@ -7,7 +7,11 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.support.v7.app.ActionBar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -52,6 +56,12 @@ public class MainActivity extends AppCompatActivity {
     private final int feed_product = 1;
     private final int move_product = 2;
 
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+
+    private CharSequence mDrawerTitle;
+    private CharSequence mTitle;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
         feed_text = (TextView) findViewById(R.id.feed_text);
         joystick = (JoystickView) findViewById(R.id.joystickView);
         joystick_debug = (TextView) findViewById(R.id.joystick_debug);
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.app_bar);
 
         Bundle b = getIntent().getExtras();
         String group = b.getString("group");
@@ -79,6 +90,57 @@ public class MainActivity extends AppCompatActivity {
                     "secret_token=" + token
             );
         }
+        //메뉴 빛 툴바
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        mTitle = getTitle();
+        mDrawerTitle = "Products";
+
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this,
+                mDrawerLayout,
+                toolbar,
+                R.string.open_drawer,
+                R.string.close_drawer)
+        {
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                toolbar.setTitle(mTitle);
+                invalidateOptionsMenu();
+                syncState();
+            }
+
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                toolbar.setTitle(mDrawerTitle);
+                invalidateOptionsMenu();
+                syncState();
+            }
+        };
+
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // This to ensure the navigation icon is displayed as
+        // burger instead of arrow.
+        // Call syncState() from your Activity's onPostCreate
+        // to synchronize the indicator with the state of the
+        // linked DrawerLayout after onRestoreInstanceState
+        // has occurred.
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // This method should always be called by your Activity's
+        // onConfigurationChanged method.
+        mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
     public void mOnClick(View v) {
@@ -404,6 +466,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        // Pass the event to ActionBarDrawerToggle, if it returns
+        // true, then it has handled the app icon touch event
+        // This handle among other things open & close the drawer
+        // when the navigation icon(burger/arrow) is clicked on.
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.

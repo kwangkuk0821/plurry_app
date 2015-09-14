@@ -23,6 +23,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.balysv.materialmenu:material-menu:1.4.0'
     compile 'org.apache.httpcomponents:httpcore:4.4.2'
     compile 'org.apache.httpcomponents:httpclient:4.5'
 }
