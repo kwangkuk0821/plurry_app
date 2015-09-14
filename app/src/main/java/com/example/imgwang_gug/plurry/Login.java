@@ -35,6 +35,8 @@ public class Login extends AppCompatActivity {
     private static HttpURLConnection conn;
     private SharedPreferences pref;
     private final String prefName = "plurry";
+    private final String loginUrl = "http://plurry.cycorld.com:3000/mobile/users/sign_in";
+    private final String loginTokenUrl = "http://plurry.cycorld.com:3000/mobile/users/sign_in_token";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +51,7 @@ public class Login extends AppCompatActivity {
         Log.d("token", token);
         if(!token.isEmpty()) {
             new SignInTask().execute(
-                    "http://plurry.cycorld.com:3000/mobile/users/sign_in_token",
+                    loginTokenUrl,
                     "secret_token=" + token
             );
         }
@@ -59,7 +61,7 @@ public class Login extends AppCompatActivity {
         switch (v.getId()) {
             case R.id.sign_in_btn:
                 new SignInTask().execute(
-                        "http://plurry.cycorld.com:3000/mobile/users/sign_in",
+                        loginUrl,
                         "email=" + email.getText().toString() + "&password=" + password.getText().toString()
                 );
                 break;

@@ -37,6 +37,7 @@ public class GroupList extends AppCompatActivity {
     private final String prefName = "plurry";
     private ListView group_list_view;
     private ArrayList<String> group_list;
+    private final String GroupUrl = "http://plurry.cycorld.com:3000/mobile/groups";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +52,7 @@ public class GroupList extends AppCompatActivity {
             this.finish();
         } else {
             new requestTask().execute(
-                    "http://plurry.cycorld.com:3000/mobile/groups",
+                    GroupUrl,
                     "secret_token=" + token
             );
         }
