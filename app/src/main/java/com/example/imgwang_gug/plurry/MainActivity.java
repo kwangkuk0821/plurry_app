@@ -3,6 +3,7 @@ package com.example.imgwang_gug.plurry;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,7 +27,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -44,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private JoystickView joystick;
     private TextView joystick_debug;
     private SharedPreferences pref;
+    private LinearLayout feed_area;
+    private LinearLayout joystick_area;
     private final String prefName = "plurry";
     private String token;
     private final int feed_product = 1;
@@ -53,6 +55,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        feed_area = (LinearLayout) findViewById(R.id.feed_area);
+        joystick_area = (LinearLayout) findViewById(R.id.joystick_area);
+        feed_button = (Button) findViewById(R.id.feed_btn);
+        feed_amount = (SeekBar) findViewById(R.id.feed_amount);
+        feed_text = (TextView) findViewById(R.id.feed_text);
+        joystick = (JoystickView) findViewById(R.id.joystickView);
+        joystick_debug = (TextView) findViewById(R.id.joystick_debug);
 
         Bundle b = getIntent().getExtras();
         String group = b.getString("group");
@@ -68,10 +78,6 @@ public class MainActivity extends AppCompatActivity {
                     "secret_token=" + token
             );
         }
-
-        feed_button = (Button) findViewById(R.id.feed_btn);
-        feed_amount = (SeekBar) findViewById(R.id.feed_amount);
-        feed_text = (TextView) findViewById(R.id.feed_text);
 
         feed_amount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -89,8 +95,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        joystick = (JoystickView) findViewById(R.id.joystickView);
-        joystick_debug = (TextView) findViewById(R.id.joystick_debug);
 
         // Listener of events, it'll return the angle in graus and power in percents
         // return to the direction of the moviment
@@ -260,11 +264,10 @@ public class MainActivity extends AppCompatActivity {
                     products = resultJSON.getJSONArray("data");
                     client = new WebSocketClient[4];
                     for(int i = 0; i < products.length();i++) {
-                        Log.d("class", "" + products.get(i).getClass());
                         JSONObject product = (JSONObject) products.get(i);
-                        Log.d("product", "result = " + product.getString("product_id"));
                         websocket(product.getString("product_id"), product.getInt("product_type"));
                     }
+                    removeProductView();
                     Log.d("task_result", "result = " + resultJSON);
                     Log.d("websockes", "result = " + client);
                 } catch (JSONException e) {
@@ -276,10 +279,130 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public class logoutTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog logoutPending = new ProgressDialog(MainActivity.this);
+
+        public String jsonConverter(String str) {
+            str = str.replace("\\", "");
+            str = str.replace("\"{", "{");
+            str = str.replace("}\",", "},");
+            str = str.replace("}\"", "}");
+
+            return str;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            logoutPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            logoutPending.setMessage("데이터를 불러오는 중 입니다...");
+
+            logoutPending.show();
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            URL url = null;
+            int responseCode = 0;
+            String urlParameters = null;
+            String response = null;
+            DataOutputStream os = null;
+            InputStream is = null;
+            BufferedReader br = null;
+            try {
+                url = new URL(params[0]);
+                urlParameters = params[1];
+                Log.d("parameters", urlParameters);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setReadTimeout(5000);
+                conn.setConnectTimeout(5000);
+                conn.setRequestProperty("charset", "euc-kr");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                os = new DataOutputStream(conn.getOutputStream());
+                os.writeBytes(urlParameters);
+                os.flush();
+
+                responseCode = conn.getResponseCode();
+                Log.d("responseCode", responseCode + "");
+
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+
+                    is = conn.getInputStream();
+                    br = new BufferedReader(new InputStreamReader(is));
+
+                    response = new String(br.readLine());
+                    response = jsonConverter(response);
+
+                    JSONObject responseJSON = new JSONObject(response);
+
+                    Log.i("response", "DATA response = " + responseJSON);
+                    Log.i("response", "DATA response = " + responseJSON.get("result"));
+                }
+            } catch (MalformedURLException e) {
+                Log.d("MalformedURLException", "ERROR " + e.getMessage());
+            } catch (IOException e) {
+                Log.d("IOException", "ERROR " + e.getMessage());
+            } catch (JSONException e) {
+                Log.d("JSONException", "ERROR " + e.getMessage());
+            }
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return response;
+            } else {
+                return "fail";
+            }
+        }
+
+        protected void onPostExecute(String data) {
+            logoutPending.dismiss();
+            // result is what you got from your connection
+            if(!data.equals("fail")) {
+                JSONObject resultJSON = null;
+                String result = null;
+                String what = null;
+                try {
+                    resultJSON = new JSONObject(data);
+                    result = resultJSON.getString("result");
+                    what = resultJSON.getString("what");
+                    if(result.equals("success") && what.equals("logout")) {
+                        removePreferences("secret_token");
+                        Intent i = new Intent(MainActivity.this, Login.class);
+                        startActivity(i);
+                        Toast.makeText(MainActivity.this, "로그아웃 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                        MainActivity.this.finish();
+                    } else {
+                        Toast.makeText(MainActivity.this, "로그아웃 실패하였습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    Log.d("JSONException", "ERROR " + e.getMessage());
+                }
+            } else {
+                Toast.makeText(MainActivity.this, "로그아웃 실패하였습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public void removeProductView() {
+        if(client[feed_product] == null) {
+            feed_area.removeAllViews();
+        } else {
+            feed_area.setVisibility(View.VISIBLE);
+        }
+        if(client[move_product] == null) {
+            joystick_area.removeAllViews();
+        } else {
+            joystick_area.setVisibility(View.VISIBLE);
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_logined, menu);
         return true;
     }
 
@@ -291,7 +414,11 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.menu_sign_out) {
+            new logoutTask().execute(
+                    "http://plurry.cycorld.com:3000/mobile/users/sign_out",
+                    "secret_token=" + token
+            );
             return true;
         }
 

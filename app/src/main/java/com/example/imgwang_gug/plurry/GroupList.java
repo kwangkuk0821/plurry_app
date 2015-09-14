@@ -180,10 +180,117 @@ public class GroupList extends AppCompatActivity {
         }
     }
 
+    public class logoutTask extends AsyncTask<String, Void, String> {
+
+        ProgressDialog logoutPending = new ProgressDialog(GroupList.this);
+
+        public String jsonConverter(String str) {
+            str = str.replace("\\", "");
+            str = str.replace("\"{", "{");
+            str = str.replace("}\",", "},");
+            str = str.replace("}\"", "}");
+
+            return str;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            logoutPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            logoutPending.setMessage("데이터를 불러오는 중 입니다...");
+
+            logoutPending.show();
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            URL url = null;
+            int responseCode = 0;
+            String urlParameters = null;
+            String response = null;
+            DataOutputStream os = null;
+            InputStream is = null;
+            BufferedReader br = null;
+            try {
+                url = new URL(params[0]);
+                urlParameters = params[1];
+                Log.d("parameters", urlParameters);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setReadTimeout(5000);
+                conn.setConnectTimeout(5000);
+                conn.setRequestProperty("charset", "euc-kr");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                os = new DataOutputStream(conn.getOutputStream());
+                os.writeBytes(urlParameters);
+                os.flush();
+
+                responseCode = conn.getResponseCode();
+                Log.d("responseCode", responseCode + "");
+
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+
+                    is = conn.getInputStream();
+                    br = new BufferedReader(new InputStreamReader(is));
+
+                    response = new String(br.readLine());
+                    response = jsonConverter(response);
+
+                    JSONObject responseJSON = new JSONObject(response);
+
+                    Log.i("response", "DATA response = " + responseJSON);
+                    Log.i("response", "DATA response = " + responseJSON.get("result"));
+                }
+            } catch (MalformedURLException e) {
+                Log.d("MalformedURLException", "ERROR " + e.getMessage());
+            } catch (IOException e) {
+                Log.d("IOException", "ERROR " + e.getMessage());
+            } catch (JSONException e) {
+                Log.d("JSONException", "ERROR " + e.getMessage());
+            }
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return response;
+            } else {
+                return "fail";
+            }
+        }
+
+        protected void onPostExecute(String data) {
+            logoutPending.dismiss();
+            // result is what you got from your connection
+            if(!data.equals("fail")) {
+                JSONObject resultJSON = null;
+                String result = null;
+                String what = null;
+                try {
+                    resultJSON = new JSONObject(data);
+                    result = resultJSON.getString("result");
+                    what = resultJSON.getString("what");
+                    if(result.equals("success") && what.equals("logout")) {
+                        removePreferences("secret_token");
+                        Intent i = new Intent(GroupList.this, Login.class);
+                        startActivity(i);
+                        Toast.makeText(GroupList.this, "로그아웃 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                        GroupList.this.finish();
+                    } else {
+                        Toast.makeText(GroupList.this, "로그아웃 실패하였습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    Log.d("JSONException", "ERROR " + e.getMessage());
+                }
+            } else {
+                Toast.makeText(GroupList.this, "로그아웃 실패하였습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_group_list, menu);
+        getMenuInflater().inflate(R.menu.menu_logined, menu);
         return true;
     }
 
