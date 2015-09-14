@@ -3,10 +3,11 @@ package com.example.imgwang_gug.plurry;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -78,47 +79,6 @@ public class MainActivity extends AppCompatActivity {
                     "secret_token=" + token
             );
         }
-
-        feed_amount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                feed_text.setText(Integer.toString(progress + 1));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-
-
-        // Listener of events, it'll return the angle in graus and power in percents
-        // return to the direction of the moviment
-        joystick.setOnJoystickMoveListener(new OnJoystickMoveListener() {
-            @Override
-            public void onValueChanged(int angle, int power, int direction, float x, float y) {
-                try {
-                    JSONObject left = new JSONObject();
-                    JSONObject right = new JSONObject();
-                    left.put("cmd", 8);
-                    right.put("cmd", 9);
-                    int left_speed = (int) (y + x + 50);
-                    int right_speed = (int) (y - x + 50);
-                    left.put("speed", left_speed);
-                    right.put("speed", right_speed);
-                    client[move_product].send(left.toString());
-                    client[move_product].send(right.toString());
-                } catch (JSONException e) {
-                    Log.e("MYAPP", "unexpected JSON exception", e);
-                }
-                joystick_debug.setText("x : " + x + " y : " + y);
-            }
-        }, JoystickView.DEFAULT_LOOP_INTERVAL);
-
     }
 
     public void mOnClick(View v) {
@@ -391,11 +351,47 @@ public class MainActivity extends AppCompatActivity {
             feed_area.removeAllViews();
         } else {
             feed_area.setVisibility(View.VISIBLE);
+            feed_amount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    feed_text.setText(Integer.toString(progress + 1));
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                }
+            });
+
         }
         if(client[move_product] == null) {
             joystick_area.removeAllViews();
         } else {
             joystick_area.setVisibility(View.VISIBLE);
+            joystick.setOnJoystickMoveListener(new OnJoystickMoveListener() {
+                @Override
+                public void onValueChanged(int angle, int power, int direction, float x, float y) {
+                    try {
+                        JSONObject left = new JSONObject();
+                        JSONObject right = new JSONObject();
+                        left.put("cmd", 8);
+                        right.put("cmd", 9);
+                        int left_speed = (int) (y + x + 50);
+                        int right_speed = (int) (y - x + 50);
+                        left.put("speed", left_speed);
+                        right.put("speed", right_speed);
+                        client[move_product].send(left.toString());
+                        client[move_product].send(right.toString());
+                    } catch (JSONException e) {
+                        Log.e("MYAPP", "unexpected JSON exception", e);
+                    }
+                    joystick_debug.setText("x : " + x + " y : " + y);
+                }
+            }, JoystickView.DEFAULT_LOOP_INTERVAL);
         }
     }
 

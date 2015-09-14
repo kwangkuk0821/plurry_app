@@ -10,4 +10,6 @@
     <string name="title_activity_login">Login</string>
     <string name="title_activity_sign_up">SignUp</string>
     <string name="title_activity_group_list">GroupList</string>
+    <string name="open_drawer">Open drawer</string>
+    <string name="close_drawer">Close drawer</string>
 </resources>

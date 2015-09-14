@@ -35,6 +35,7 @@ public class GroupList extends AppCompatActivity {
     private static HttpURLConnection conn;
     private SharedPreferences pref;
     private final String prefName = "plurry";
+    private String token;
     private ListView group_list_view;
     private ArrayList<String> group_list;
     private final String GroupUrl = "http://plurry.cycorld.com:3000/mobile/groups";
@@ -45,7 +46,7 @@ public class GroupList extends AppCompatActivity {
         setContentView(R.layout.activity_group_list);
         group_list_view = (ListView) findViewById(R.id.group_list);
 
-        String token = getPreferences("secret_token");
+        token = getPreferences("secret_token");
         if (token.isEmpty()) {
             Intent i = new Intent(this, Login.class);
             startActivity(i);
@@ -302,7 +303,11 @@ public class GroupList extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.menu_sign_out) {
+            new logoutTask().execute(
+                    "http://plurry.cycorld.com:3000/mobile/users/sign_out",
+                    "secret_token=" + token
+            );
             return true;
         }
 
