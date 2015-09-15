@@ -34,7 +34,8 @@ public class Login extends AppCompatActivity {
     private EditText password;
     private TextView signup;
     private static HttpURLConnection conn;
-    private SharedPref pref = new SharedPref();
+    private SharedPreferences pref;
+    private String prefName = "plurry";
     private final String loginUrl = "http://plurry.cycorld.com:3000/mobile/users/sign_in";
     private final String loginTokenUrl = "http://plurry.cycorld.com:3000/mobile/users/sign_in_token";
     private Activity this_activity = this;
@@ -48,7 +49,7 @@ public class Login extends AppCompatActivity {
         password = (EditText) findViewById(R.id.sign_in_password);
         signup = (TextView) findViewById(R.id.link_to_register);
         //자동 로그인(secret_token이 있고 일치시에)
-        String token = pref.getPreferences("secret_token");
+        String token = getPreferences("secret_token");
         Log.d("token", token);
         if(!token.isEmpty()) {
             new SignInTask().execute(
@@ -111,7 +112,7 @@ public class Login extends AppCompatActivity {
                     if (resultJSON.has("secret_token")) {
                         Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                         secret_token = resultJSON.getString("secret_token");
-                        pref.savePreferences("secret_token", secret_token);
+                        savePreferences("secret_token", secret_token);
                         Intent i = new Intent(this_activity, GroupList.class);
                         startActivity(i);
                         this_activity.finish();
@@ -154,5 +155,36 @@ public class Login extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    //값 불러오기
+    public String getPreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        String data = pref.getString(key, "");
+        return data;
+    }
+
+    // 값 저장하기
+    public void savePreferences(String key, String value) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    // 값(Key Data) 삭제하기
+    public void removePreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.remove(key);
+        editor.commit();
+    }
+
+    // 값(ALL Data) 삭제하기
+    public void removeAllPreferences() {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.clear();
+        editor.commit();
     }
 }

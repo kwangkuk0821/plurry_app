@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity {
     private final int move_product = 2;
     private Activity this_activity = this;
     private String group;
-    private SharedPref pref = new SharedPref();
+    private SharedPreferences pref;
+    private String prefName = "plurry";
 
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -79,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         Bundle b = getIntent().getExtras();
         group = b.getString("group");
 
-        token = pref.getPreferences("secret_token");
+        token = getPreferences("secret_token");
         if (token.isEmpty()) {
             Intent i = new Intent(this, Login.class);
             startActivity(i);
@@ -306,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
                     result = resultJSON.getString("result");
                     what = resultJSON.getString("what");
                     if(result.equals("success") && what.equals("logout")) {
-                        pref.removePreferences("secret_token");
+                        removePreferences("secret_token");
                         Intent i = new Intent(this_activity, Login.class);
                         startActivity(i);
                         Toast.makeText(this_activity, "로그아웃 성공하였습니다.", Toast.LENGTH_SHORT).show();
@@ -403,5 +404,35 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+    //값 불러오기
+    public String getPreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        String data = pref.getString(key, "");
+        return data;
+    }
+
+    // 값 저장하기
+    public void savePreferences(String key, String value) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    // 값(Key Data) 삭제하기
+    public void removePreferences(String key) {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.remove(key);
+        editor.commit();
+    }
+
+    // 값(ALL Data) 삭제하기
+    public void removeAllPreferences() {
+        pref = getSharedPreferences(prefName, MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.clear();
+        editor.commit();
     }
 }
