@@ -1,5 +1,6 @@
 package com.example.imgwang_gug.plurry;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -29,11 +30,11 @@ import java.security.acl.Group;
 public class SignUp extends AppCompatActivity {
 
     private static HttpURLConnection conn;
-    private SharedPreferences pref;
-    private final String prefName = "plurry";
+    private SharedPref pref = new SharedPref();
     private EditText email;
     private EditText password;
     private EditText password_confirmation;
+    private Activity this_activity = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,16 +55,16 @@ public class SignUp extends AppCompatActivity {
                 );
                 break;
             case R.id.link_to_login:
-                Intent i = new Intent(SignUp.this, Login.class);
+                Intent i = new Intent(this_activity, Login.class);
                 startActivity(i);
-                SignUp.this.finish();
+                this_activity.finish();
                 break;
         }
     }
 
     public class SignUpTask extends AsyncTask<String, Void, String> {
 
-        ProgressDialog signupPending = new ProgressDialog(SignUp.this);
+        ProgressDialog signupPending = new ProgressDialog(this_activity);
 
         public String jsonConverter(String str) {
             str = str.replace("\\", "");
@@ -144,51 +145,20 @@ public class SignUp extends AppCompatActivity {
                 result = resultJSON.getString("result");
                 what = resultJSON.getString("what");
                 if (resultJSON.has("secret_token")) {
-                    Toast.makeText(SignUp.this, "회원가입에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this_activity, "회원가입에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                     secret_token = resultJSON.getString("secret_token");
-                    savePreferences("secret_token", secret_token);
-                    Intent i = new Intent(SignUp.this, GroupList.class);
+                    pref.savePreferences("secret_token", secret_token);
+                    Intent i = new Intent(this_activity, GroupList.class);
                     startActivity(i);
-                    SignUp.this.finish();
+                    this_activity.finish();
                 } else {
-                    Toast.makeText(SignUp.this, "회원가입에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this_activity, "회원가입에 실패하였습니다.", Toast.LENGTH_SHORT).show();
                 }
                 Log.d("task_result", "result = " + resultJSON);
             } catch (JSONException e) {
                 Log.d("JSONException", "ERROR " + e.getMessage());
             }
         }
-    }
-
-    //값 불러오기
-    private String getPreferences(String key) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        String data = pref.getString(key, "");
-        return data;
-    }
-
-    // 값 저장하기
-    private void savePreferences(String key, String value) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.putString(key, value);
-        editor.commit();
-    }
-
-    // 값(Key Data) 삭제하기
-    private void removePreferences(String key) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.remove(key);
-        editor.commit();
-    }
-
-    // 값(ALL Data) 삭제하기
-    private void removeAllPreferences() {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.clear();
-        editor.commit();
     }
 
     @Override

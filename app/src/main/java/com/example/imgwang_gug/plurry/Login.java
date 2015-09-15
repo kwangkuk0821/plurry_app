@@ -1,5 +1,6 @@
 package com.example.imgwang_gug.plurry;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,10 +34,10 @@ public class Login extends AppCompatActivity {
     private EditText password;
     private TextView signup;
     private static HttpURLConnection conn;
-    private SharedPreferences pref;
-    private final String prefName = "plurry";
+    private SharedPref pref = new SharedPref();
     private final String loginUrl = "http://plurry.cycorld.com:3000/mobile/users/sign_in";
     private final String loginTokenUrl = "http://plurry.cycorld.com:3000/mobile/users/sign_in_token";
+    private Activity this_activity = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,7 @@ public class Login extends AppCompatActivity {
         password = (EditText) findViewById(R.id.sign_in_password);
         signup = (TextView) findViewById(R.id.link_to_register);
         //자동 로그인(secret_token이 있고 일치시에)
-        String token = getPreferences("secret_token");
+        String token = pref.getPreferences("secret_token");
         Log.d("token", token);
         if(!token.isEmpty()) {
             new SignInTask().execute(
@@ -67,46 +68,15 @@ public class Login extends AppCompatActivity {
                 break;
             case R.id.link_to_register:
                 signup.setClickable(false);
-                Intent i = new Intent(Login.this, SignUp.class);
+                Intent i = new Intent(this_activity, SignUp.class);
                 startActivity(i);
                 break;
         }
     }
 
-    //값 불러오기
-    private String getPreferences(String key) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        String data = pref.getString(key, "");
-        return data;
-    }
+    public class SignInTask extends RequestTask {
 
-    // 값 저장하기
-    private void savePreferences(String key, String value) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.putString(key, value);
-        editor.commit();
-    }
-
-    // 값(Key Data) 삭제하기
-    private void removePreferences(String key) {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.remove(key);
-        editor.commit();
-    }
-
-    // 값(ALL Data) 삭제하기
-    private void removeAllPreferences() {
-        pref = getSharedPreferences(prefName, MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.clear();
-        editor.commit();
-    }
-
-    public class SignInTask extends AsyncTask<String, Void, String> {
-
-        ProgressDialog loginPending = new ProgressDialog(Login.this);
+        ProgressDialog loginPending = new ProgressDialog(this_activity);
 
         public String jsonConverter(String str) {
             str = str.replace("\\", "");
@@ -126,55 +96,6 @@ public class Login extends AppCompatActivity {
             super.onPreExecute();
         }
 
-        @Override
-        protected String doInBackground(String... params) {
-            URL url = null;
-            String urlParameters = null;
-            String response = null;
-            DataOutputStream os = null;
-            InputStream is = null;
-            BufferedReader br = null;
-            try {
-                url = new URL(params[0]);
-                urlParameters = params[1];
-                Log.d("parameters", urlParameters);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setReadTimeout(5000);
-                conn.setConnectTimeout(5000);
-                conn.setRequestProperty("charset", "euc-kr");
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-
-                os = new DataOutputStream(conn.getOutputStream());
-                os.writeBytes(urlParameters);
-                os.flush();
-
-                int responseCode = conn.getResponseCode();
-
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-
-                    is = conn.getInputStream();
-                    br = new BufferedReader(new InputStreamReader(is));
-
-                    response = new String(br.readLine());
-                    response = jsonConverter(response);
-
-                    JSONObject responseJSON = new JSONObject(response);
-
-                    Log.i("response", "DATA response = " + responseJSON);
-                    Log.i("response", "DATA response = " + responseJSON.get("result"));
-                }
-            } catch (MalformedURLException e) {
-                Log.d("MalformedURLException", "ERROR " + e.getMessage());
-            } catch (IOException e) {
-                Log.d("IOException", "ERROR " + e.getMessage());
-            } catch (JSONException e) {
-                Log.d("JSONException", "ERROR " + e.getMessage());
-            }
-            return response;
-        }
-
         protected void onPostExecute(String data) {
             loginPending.dismiss();
             // result is what you got from your connection
@@ -188,21 +109,21 @@ public class Login extends AppCompatActivity {
                 what = resultJSON.getString("what");
                 if (what.equals("sign_in")) {
                     if (resultJSON.has("secret_token")) {
-                        Toast.makeText(Login.this, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
                         secret_token = resultJSON.getString("secret_token");
-                        savePreferences("secret_token", secret_token);
-                        Intent i = new Intent(Login.this, GroupList.class);
+                        pref.savePreferences("secret_token", secret_token);
+                        Intent i = new Intent(this_activity, GroupList.class);
                         startActivity(i);
-                        Login.this.finish();
+                        this_activity.finish();
                     } else {
-                        Toast.makeText(Login.this, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this_activity, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
                     }
                 } else if(what.equals("sign_in_token")) {
                     if(result.equals("success")) {
-                        Toast.makeText(Login.this, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                        Intent i = new Intent(Login.this, GroupList.class);
+                        Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                        Intent i = new Intent(this_activity, GroupList.class);
                         startActivity(i);
-                        Login.this.finish();
+                        this_activity.finish();
                     }
                 }
                 Log.d("task_result", "result = " + resultJSON);

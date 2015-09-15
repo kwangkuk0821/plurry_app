@@ -12,4 +12,6 @@
     <string name="title_activity_group_list">GroupList</string>
     <string name="open_drawer">Open drawer</string>
     <string name="close_drawer">Close drawer</string>
+    <string name="title_activity_schedule">Schedule</string>
+    <string name="title_activity_add_products">AddProducts</string>
 </resources>
