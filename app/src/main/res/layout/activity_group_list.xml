@@ -9,8 +9,18 @@
     <ListView
         android:id="@+id/group_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/new_group_btn">
 
     </ListView>
+
+    <Button
+        android:id="@+id/new_group_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dip"
+        android:onClick="mOnClick"
+        android:text="새로운 그룹 만들기"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

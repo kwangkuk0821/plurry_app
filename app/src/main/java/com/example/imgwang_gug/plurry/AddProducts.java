@@ -16,16 +16,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
-
-import com.example.imgwang_gug.plurry.MainActivity;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.Scanner;
 
 public class AddProducts extends AppCompatActivity {
 
@@ -41,13 +37,25 @@ public class AddProducts extends AppCompatActivity {
     private ListView navList;
     private Activity this_activity = this;
     private String token;
+    private String[] products_code;
+
+    private EditText groupName;
+    private EditText smartPhone;
+    private EditText feedCode;
+    private EditText moveCode;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_products);
 
+        groupName = (EditText)findViewById(R.id.group_name);
+        smartPhone = (EditText)findViewById(R.id.smartphone_code);
+        feedCode = (EditText)findViewById(R.id.feed_code);
+        moveCode = (EditText)findViewById(R.id.move_code);
+
         Bundle b = getIntent().getExtras();
         group = b.getString("group");
+        groupName.setText(group);
 
         token = getPreferences("secret_token");
         if (token.isEmpty()) {
@@ -98,6 +106,26 @@ public class AddProducts extends AppCompatActivity {
         navList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, navItems));
         navList.setOnItemClickListener(new DrawerItemClickListener());
     }
+    public void mOnClick(View v) {
+        switch (v.getId()) {
+            case R.id.products_edit_btn:
+                String name = groupName.getText().toString();
+                String code1 = feedCode.getText().toString();
+                String code2 = moveCode.getText().toString();
+                String code3 = smartPhone.getText().toString();
+                new productTask().execute(
+                        "http://plurry.cycorld.com:3000/mobile/" + group + "/update",
+                        "secret_token=" + token + "&group=" + name + "&products[]=" + code1 + "&products[]=" + code2 + "&products[]=" + code3
+                );
+                break;
+            case R.id.menu_sign_out:
+                new logoutTask().execute(
+                        "http://plurry.cycorld.com:3000/mobile/users/sign_out",
+                        "secret_token=" + token
+                );
+                break;
+        }
+    }
     public class productTask extends RequestTask {
 
         ProgressDialog dataPending = new ProgressDialog(this_activity);
@@ -127,10 +155,25 @@ public class AddProducts extends AppCompatActivity {
                 JSONObject resultJSON = null;
                 String result = null;
                 String what = null;
-                JSONArray products = null;
                 try {
                     resultJSON = new JSONObject(data);
-                    Log.d("task_result", "result = " + resultJSON);
+                    result = resultJSON.getString("result");
+                    what = resultJSON.getString("what");
+                    if(what.equals("products")) {
+                        JSONArray products = resultJSON.getJSONArray("data");
+                        products_code = new String[4];
+                        for(int i = 0; i < products.length();i++) {
+                            JSONObject product = (JSONObject) products.get(i);
+                            products_code[product.getInt("product_type")] = product.getString("code");
+                        }
+                        feedCode.setText(products_code[1]);
+                        moveCode.setText(products_code[2]);
+                        smartPhone.setText(products_code[3]);
+                    } else if(what.equals("product update")) {
+                        Log.d("product_update", "product_update!!!!");
+                        finish();
+                        startActivity(getIntent());
+                    }
                 } catch (JSONException e) {
                     Log.d("JSONException", "ERROR " + e.getMessage());
                 }
@@ -139,6 +182,58 @@ public class AddProducts extends AppCompatActivity {
             }
         }
     }
+
+    public class logoutTask extends RequestTask {
+
+        ProgressDialog logoutPending = new ProgressDialog(this_activity);
+
+        public String jsonConverter(String str) {
+            str = str.replace("\\", "");
+            str = str.replace("\"{", "{");
+            str = str.replace("}\",", "},");
+            str = str.replace("}\"", "}");
+
+            return str;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            logoutPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            logoutPending.setMessage("데이터를 불러오는 중 입니다...");
+
+            logoutPending.show();
+            super.onPreExecute();
+        }
+
+        protected void onPostExecute(String data) {
+            logoutPending.dismiss();
+            // result is what you got from your connection
+            if(!data.equals("fail")) {
+                JSONObject resultJSON = null;
+                String result = null;
+                String what = null;
+                try {
+                    resultJSON = new JSONObject(data);
+                    result = resultJSON.getString("result");
+                    what = resultJSON.getString("what");
+                    if(result.equals("success") && what.equals("logout")) {
+                        removePreferences("secret_token");
+                        Intent i = new Intent(this_activity, Login.class);
+                        startActivity(i);
+                        Toast.makeText(this_activity, "로그아웃 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                        this_activity.finish();
+                    } else {
+                        Toast.makeText(this_activity, "로그아웃 실패하였습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    Log.d("JSONException", "ERROR " + e.getMessage());
+                }
+            } else {
+                Toast.makeText(this_activity, "로그아웃 실패하였습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {

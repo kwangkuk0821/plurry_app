@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -28,7 +27,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.acl.Group;
 import java.util.ArrayList;
 
 public class GroupList extends AppCompatActivity {
@@ -61,6 +59,15 @@ public class GroupList extends AppCompatActivity {
         }
 
 
+    }
+
+    public void mOnClick(View v) {
+        switch (v.getId()) {
+            case R.id.new_group_btn:
+                Intent i = new Intent(this_activity, CreateGroup.class);
+                startActivity(i);
+                break;
+        }
     }
 
     public class groupTask extends RequestTask {

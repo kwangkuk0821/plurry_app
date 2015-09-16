@@ -14,4 +14,5 @@
     <string name="close_drawer">Close drawer</string>
     <string name="title_activity_schedule">Schedule</string>
     <string name="title_activity_add_products">AddProducts</string>
+    <string name="title_activity_create_group">CreateGroup</string>
 </resources>

@@ -44,6 +44,10 @@
             android:name=".AddProducts"
             android:label="@string/title_activity_add_products" >
         </activity>
+        <activity
+            android:name=".CreateGroup"
+            android:label="@string/title_activity_create_group" >
+        </activity>
     </application>
 
 </manifest>

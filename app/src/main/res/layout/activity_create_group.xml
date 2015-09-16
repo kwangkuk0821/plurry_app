@@ -1,0 +1,97 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dip">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="제품 등록하기"
+                android:layout_marginBottom="25dp"
+                android:textSize="30dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="제품 이름 짓기"
+                android:textColor="#372c24"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/group_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dip"
+                android:hint="제품의 이름을 지어주세요..."
+                android:inputType="textWebEmailAddress"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="스마트폰 부분"
+                android:textColor="#372c24"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/smartphone_code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dip"
+                android:hint="스마트폰에서 생성된 코드 입력..."
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="밥통 부분"
+                android:textColor="#372c24"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/feed_code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dip"
+                android:hint="밥통 코드를 입력..."
+                android:inputType="textWebEmailAddress"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="구동부(바퀴) 부분"
+                android:textColor="#372c24"
+                android:textSize="20dp" />
+
+            <EditText
+                android:id="@+id/move_code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="구동부 코드를 입력..."
+                android:singleLine="true" />
+
+            <Button
+                android:id="@+id/create_group_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dip"
+                android:onClick="mOnClick"
+                android:text="등록하기" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
