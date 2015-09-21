@@ -15,4 +15,5 @@
     <string name="title_activity_schedule">Schedule</string>
     <string name="title_activity_add_products">AddProducts</string>
     <string name="title_activity_create_group">CreateGroup</string>
+    <string name="title_activity_create_schedule">CreateSchedule</string>
 </resources>

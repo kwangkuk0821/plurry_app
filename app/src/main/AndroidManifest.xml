@@ -36,9 +36,11 @@
             android:label="@string/title_activity_group_list" >
         </activity>
         <activity
-            android:name=".Schedule"
+            android:name=".ScheduleList"
             android:label="@string/title_activity_schedule"
-            android:screenOrientation="landscape" >
+            android:screenOrientation="portrait" >
+
+
         </activity>
         <activity
             android:name=".AddProducts"
@@ -47,6 +49,11 @@
         <activity
             android:name=".CreateGroup"
             android:label="@string/title_activity_create_group" >
+        </activity>
+        <activity
+            android:name=".CreateSchedule"
+            android:label="@string/title_activity_create_schedule"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
         </activity>
     </application>
 
