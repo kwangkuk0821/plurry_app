@@ -45,8 +45,8 @@ public class ScheduleList extends AppCompatActivity {
     private CharSequence mTitle;
     private ListView navList;
     private Activity this_activity = this;
-    private WebSocketClient client;
-    private WebSocketClient rs_client;
+    private WebSocketClient client = null;
+    private WebSocketClient rs_client = null;
 
     private String group;
     private String token;
@@ -62,7 +62,6 @@ public class ScheduleList extends AppCompatActivity {
         setContentView(R.layout.activity_schedule_list);
 
         Bundle b = getIntent().getExtras();
-        //group = b.getString("group");
         group = "myrobot";
 
         token = getPreferences("secret_token");
@@ -113,6 +112,9 @@ public class ScheduleList extends AppCompatActivity {
 
         navList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, navItems));
         navList.setOnItemClickListener(new DrawerItemClickListener());
+
+        //websocket
+
     }
     @Override
     protected  void onPause() {
@@ -151,9 +153,9 @@ public class ScheduleList extends AppCompatActivity {
             final int mypos = position;
             Toast.makeText(this_activity, "click " + position, Toast.LENGTH_SHORT).show();
             AlertDialog.Builder alert = new AlertDialog.Builder(this_activity);
-            alert.setTitle("title");
+            alert.setTitle("스케쥴(Schedule)");
             alert.setCancelable(false);
-            alert.setMessage("안녕하세요");
+            alert.setMessage("정말로 삭제하시겠습니까?");
             alert.setPositiveButton("확인", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface arg0, int arg1) {
@@ -169,10 +171,6 @@ public class ScheduleList extends AppCompatActivity {
                         cmd.put("timestamp", 0);
                         cmd.put("amount", 0);
                         client.send(cmd.toString());
-                        new productTask().execute(
-                                "http://plurry.cycorld.com:3000/mobile/" + product_id + "/schedule/update",
-                                "secret_token=" + token + "&nid=" + nid + "&time=" + time + "&amount=" + amount
-                        );
                     } catch (JSONException e) {
                         Log.e("MYAPP", "unexpected JSON exception", e);
                     }
@@ -224,7 +222,6 @@ public class ScheduleList extends AppCompatActivity {
 
     public class productTask extends RequestTask {
 
-        ProgressDialog dataPending = new ProgressDialog(this_activity);
 
         public String jsonConverter(String str) {
             str = str.replace("\\", "");
@@ -237,14 +234,10 @@ public class ScheduleList extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            dataPending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            dataPending.setMessage("데이터를 처리하는 중 입니다...");
-            dataPending.show();
             super.onPreExecute();
         }
 
         protected void onPostExecute(String data) {
-            dataPending.dismiss();
             // result is what you got from your connection
             if(!data.equals("fail")) {
                 JSONObject resultJSON = null;
@@ -266,13 +259,10 @@ public class ScheduleList extends AppCompatActivity {
                                 lview.setAdapter(adapter);
                                 lview.setOnItemLongClickListener(new listLongClick());
                                 product_id = product.getString("product_id");
-                                openWebsocket(product_id);
+                                if(client == null || rs_client == null) openWebsocket(product_id);
                                 break;
                             }
                         }
-                    } else if(what.equals("schedule update")) {
-                        finish();
-                        startActivity(getIntent());
                     }
                 } catch (JSONException e) {
                     Log.d("JSONException", "ERROR " + e.getMessage());
@@ -350,8 +340,10 @@ public class ScheduleList extends AppCompatActivity {
                     JSONObject rs = new JSONObject(message);
 
                     if(rs.has("rs") && rs.get("errcode").equals(0) && rs.get("rs").equals(104)) {
-                        finish();
-                        startActivity(getIntent());
+                        new productTask().execute(
+                                "http://plurry.cycorld.com:3000/mobile/" + group + "/products",
+                                "secret_token=" + token
+                        );
                     }
                 } catch (JSONException e) {
                     Log.d("JSONException", "Error Rised -> " + e.getMessage());

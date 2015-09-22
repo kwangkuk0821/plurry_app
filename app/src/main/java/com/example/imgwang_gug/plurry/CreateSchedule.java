@@ -268,22 +268,8 @@ public class CreateSchedule extends AppCompatActivity {
                             cmd.put("timestamp", currentTimePickSecond());
                             cmd.put("amount", amount + 1);
                             client.send(cmd.toString());
-                            /*
-                            new productTask().execute(
-                                    "http://plurry.cycorld.com:3000/mobile/" + product + "/schedule/update",
-                                    "secret_token=" + token + "&nid=" + id + "&time=" + currentTimePickString() + "&amount=" + (amount + 1)
-                            );
-                            */
                         }
                     }
-                    /*
-                    else if(what.equals("schedule update")) {
-                        this_activity.finish();
-                        Intent i = new Intent(this_activity, ScheduleList.class);
-                        i.putExtra("group", group);
-                        startActivity(i);
-                    }
-                    */
                 } catch (JSONException e) {
                     Log.d("JSONException", "ERROR " + e.getMessage());
                 }
