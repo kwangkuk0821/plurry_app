@@ -362,6 +362,14 @@ public class MainActivity extends AppCompatActivity {
             }, JoystickView.DEFAULT_LOOP_INTERVAL);
         }
     }
+    @Override
+    protected  void onPause() {
+        Log.d("stop","stop!!!!!!!!!");
+        for(int i = 0; i < client.length;i++) {
+            if(client[i] != null) client[i].disconnect();
+        }
+        super.onPause();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

@@ -40,6 +40,7 @@ public class CreateSchedule extends AppCompatActivity {
     private TimePicker timepick;
     private TextView feedText;
     private WebSocketClient client;
+    private WebSocketClient rs_client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,13 +61,22 @@ public class CreateSchedule extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 feedText.setText(Integer.toString(progress + 1));
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
+
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
+    }
+
+    @Override
+    protected  void onPause() {
+        client.disconnect();
+        rs_client.disconnect();
+        super.onPause();
     }
 
     public void openWebsocket(String product_id) {
@@ -102,7 +112,49 @@ public class CreateSchedule extends AppCompatActivity {
 
         }, extraHeaders);
 
+        rs_client = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/debug/" + product_id), new WebSocketClient.Listener() {
+            @Override
+            public void onConnect() {
+                Log.d("Connect", "Connected!");
+                Log.d("Connect2", client.toString());
+            }
+
+            @Override
+            public void onMessage(String message) {
+                Log.d("Message", String.format("Debug Got string message! %s", message));
+                try {
+                    JSONObject rs = new JSONObject(message);
+
+                    if(rs.has("rs") && rs.get("errcode").equals(0) && rs.get("rs").equals(104)) {
+                        this_activity.finish();
+                        Intent i = new Intent(this_activity, ScheduleList.class);
+                        i.putExtra("group", group);
+                        startActivity(i);
+                    }
+                } catch (JSONException e) {
+                    Log.d("JSONException", "Error Rised -> " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onMessage(byte[] data) {
+                Log.d("byte", String.format("Got binary message! %s", ("" + data)));
+            }
+
+            @Override
+            public void onDisconnect(int code, String reason) {
+                Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
+            }
+
+            @Override
+            public void onError(Exception error) {
+                Log.e("Error", "Error!", error);
+            }
+
+        }, extraHeaders);
+
         client.connect();
+        rs_client.connect();
     }
 
     public void mOnClick(View v) {
@@ -216,17 +268,22 @@ public class CreateSchedule extends AppCompatActivity {
                             cmd.put("timestamp", currentTimePickSecond());
                             cmd.put("amount", amount + 1);
                             client.send(cmd.toString());
+                            /*
                             new productTask().execute(
                                     "http://plurry.cycorld.com:3000/mobile/" + product + "/schedule/update",
                                     "secret_token=" + token + "&nid=" + id + "&time=" + currentTimePickString() + "&amount=" + (amount + 1)
                             );
+                            */
                         }
-                    } else if(what.equals("schedule update")) {
+                    }
+                    /*
+                    else if(what.equals("schedule update")) {
                         this_activity.finish();
                         Intent i = new Intent(this_activity, ScheduleList.class);
                         i.putExtra("group", group);
                         startActivity(i);
                     }
+                    */
                 } catch (JSONException e) {
                     Log.d("JSONException", "ERROR " + e.getMessage());
                 }

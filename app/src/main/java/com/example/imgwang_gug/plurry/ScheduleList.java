@@ -46,6 +46,7 @@ public class ScheduleList extends AppCompatActivity {
     private ListView navList;
     private Activity this_activity = this;
     private WebSocketClient client;
+    private WebSocketClient rs_client;
 
     private String group;
     private String token;
@@ -112,10 +113,14 @@ public class ScheduleList extends AppCompatActivity {
 
         navList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, navItems));
         navList.setOnItemClickListener(new DrawerItemClickListener());
-
-        //리스트 뷰
-
     }
+    @Override
+    protected  void onPause() {
+        client.disconnect();
+        rs_client.disconnect();
+        super.onPause();
+    }
+
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -331,7 +336,47 @@ public class ScheduleList extends AppCompatActivity {
 
         }, extraHeaders);
 
+        rs_client = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/debug/" + product_id), new WebSocketClient.Listener() {
+            @Override
+            public void onConnect() {
+                Log.d("Connect", "Connected!");
+                Log.d("Connect2", client.toString());
+            }
+
+            @Override
+            public void onMessage(String message) {
+                Log.d("Message", String.format("Debug Got string message! %s", message));
+                try {
+                    JSONObject rs = new JSONObject(message);
+
+                    if(rs.has("rs") && rs.get("errcode").equals(0) && rs.get("rs").equals(104)) {
+                        finish();
+                        startActivity(getIntent());
+                    }
+                } catch (JSONException e) {
+                    Log.d("JSONException", "Error Rised -> " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onMessage(byte[] data) {
+                Log.d("byte", String.format("Got binary message! %s", ("" + data)));
+            }
+
+            @Override
+            public void onDisconnect(int code, String reason) {
+                Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
+            }
+
+            @Override
+            public void onError(Exception error) {
+                Log.e("Error", "Error!", error);
+            }
+
+        }, extraHeaders);
+
         client.connect();
+        rs_client.connect();
     }
 
     public class logoutTask extends RequestTask {
