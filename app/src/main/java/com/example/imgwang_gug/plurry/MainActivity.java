@@ -341,15 +341,63 @@ public class MainActivity extends AppCompatActivity {
         } else {
             joystick_area.setVisibility(View.VISIBLE);
             joystick.setOnJoystickMoveListener(new OnJoystickMoveListener() {
+                int defaultVelocity = 180;
+                int maxVelocity = 255;
                 @Override
-                public void onValueChanged(int angle, int power, int direction, float x, float y) {
+                public void onValueChanged(int angle, int power, int direction, float x, float y, float width, float height) {
                     try {
                         JSONObject left = new JSONObject();
                         JSONObject right = new JSONObject();
                         left.put("cmd", 8);
                         right.put("cmd", 9);
-                        int left_speed = (int) (y + x + 50);
-                        int right_speed = (int) (y - x + 50);
+                        int maxX = (int)(width * ((float)3/8));
+                        int maxY = (int)(height * ((float)3/8));
+                        int left_speed;
+                        int right_speed;
+                        if(angle == 0) {
+                            left_speed = 0;
+                            right_speed = 0;
+                        } else if(angle <= 60 && angle > -60) {
+                            int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100))) * -1;
+                            int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100)));
+                            if(x > 0) {
+                                left_speed = defaultVelocity + plusY + plusX;
+                                right_speed = defaultVelocity + plusY;
+                            } else {
+                                left_speed = defaultVelocity + plusY;
+                                right_speed = defaultVelocity + plusY + plusX;
+                            }
+                        } else if(angle > 120 && angle <= -120) {
+                            int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100)));
+                            int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100)));
+                            if(x > 0) {
+                                left_speed = (defaultVelocity * -1) + plusY + plusX;
+                                right_speed = (defaultVelocity * -1) + plusY;
+                            } else {
+                                left_speed = (defaultVelocity * -1) + plusY;
+                                right_speed = (defaultVelocity * -1) + plusY + plusX;
+                            }
+
+                        } else if(angle > 60 && angle <= 120) {
+                            if(x > (maxX / 2)) {
+                                left_speed = 255;
+                                right_speed = -255;
+                            } else {
+                                left_speed = 0;
+                                right_speed = 0;
+                            }
+                        } else if(angle <= -60 && angle > -120) {
+                            if(Math.abs(x) > (maxX / 2)) {
+                                left_speed = -255;
+                                right_speed = 255;
+                            } else {
+                                left_speed = 0;
+                                right_speed =0;
+                            }
+                        } else {
+                            left_speed = 0;
+                            right_speed = 0;
+                        }
                         left.put("speed", left_speed);
                         right.put("speed", right_speed);
                         client[move_product].send(left.toString());
@@ -363,12 +411,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     @Override
-    protected  void onPause() {
+    protected void onStop() {
         Log.d("stop","stop!!!!!!!!!");
         for(int i = 0; i < client.length;i++) {
             if(client[i] != null) client[i].disconnect();
         }
-        super.onPause();
+        super.onStop();
     }
 
     @Override

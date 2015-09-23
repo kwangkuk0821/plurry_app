@@ -39,8 +39,8 @@ public class CreateSchedule extends AppCompatActivity {
     private SeekBar feed;
     private TimePicker timepick;
     private TextView feedText;
-    private WebSocketClient client;
-    private WebSocketClient rs_client;
+    private WebSocketClient client = null;
+    private WebSocketClient rs_client = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,10 +73,15 @@ public class CreateSchedule extends AppCompatActivity {
     }
 
     @Override
-    protected  void onPause() {
+    protected void onPause() {
         client.disconnect();
         rs_client.disconnect();
         super.onPause();
+    }
+    @Override
+    protected void onResume() {
+        openWebsocket(product);
+        super.onResume();
     }
 
     public void openWebsocket(String product_id) {

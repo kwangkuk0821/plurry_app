@@ -122,6 +122,11 @@ public class ScheduleList extends AppCompatActivity {
         rs_client.disconnect();
         super.onPause();
     }
+    @Override
+    protected void onResume() {
+        openWebsocket(product_id);
+        super.onResume();
+    }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
