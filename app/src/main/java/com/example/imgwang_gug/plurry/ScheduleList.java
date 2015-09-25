@@ -61,6 +61,7 @@ public class ScheduleList extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_schedule_list);
 
+        Log.e("refresh", "sTart");
         Bundle b = getIntent().getExtras();
         group = "myrobot";
 
@@ -123,9 +124,9 @@ public class ScheduleList extends AppCompatActivity {
         super.onPause();
     }
     @Override
-    protected void onResume() {
+    protected void onRestart() {
         openWebsocket(product_id);
-        super.onResume();
+        super.onRestart();
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
@@ -169,12 +170,10 @@ public class ScheduleList extends AppCompatActivity {
                         HashMap h = list.get(mypos);
                         JSONObject cmd = new JSONObject();
                         int nid = Integer.parseInt(h.get("nid").toString());
-                        String time = "empty";
-                        int amount = 0;
-                        cmd.put("cmd", 4);
-                        cmd.put("id", nid);
-                        cmd.put("timestamp", 0);
                         cmd.put("amount", 0);
+                        cmd.put("timestamp", 0);
+                        cmd.put("id", nid);
+                        cmd.put("cmd", 4);
                         client.send(cmd.toString());
                     } catch (JSONException e) {
                         Log.e("MYAPP", "unexpected JSON exception", e);
@@ -302,6 +301,14 @@ public class ScheduleList extends AppCompatActivity {
         List<BasicNameValuePair> extraHeaders = Arrays.asList(
                 new BasicNameValuePair("Cookie", "session=" + token)
         );
+        if(client != null) {
+            client.disconnect();
+            client = null;
+        }
+        if(rs_client != null) {
+            rs_client.disconnect();
+            rs_client = null;
+        }
         client = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
             @Override
             public void onConnect() {

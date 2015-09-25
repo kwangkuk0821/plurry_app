@@ -136,28 +136,32 @@ public class SignUp extends AppCompatActivity {
 
         protected void onPostExecute(String data) {
             signupPending.dismiss();
-            // result is what you got from your connection
-            JSONObject resultJSON = null;
-            String result = null;
-            String what = null;
-            String secret_token = null;
-            try {
-                resultJSON = new JSONObject(data);
-                result = resultJSON.getString("result");
-                what = resultJSON.getString("what");
-                if (resultJSON.has("secret_token")) {
-                    Toast.makeText(this_activity, "회원가입에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                    secret_token = resultJSON.getString("secret_token");
-                    savePreferences("secret_token", secret_token);
-                    Intent i = new Intent(this_activity, GroupList.class);
-                    startActivity(i);
-                    this_activity.finish();
-                } else {
-                    Toast.makeText(this_activity, "회원가입에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+            if (data.equals("fail")) {
+                // result is what you got from your connection
+                JSONObject resultJSON = null;
+                String result = null;
+                String what = null;
+                String secret_token = null;
+                try {
+                    resultJSON = new JSONObject(data);
+                    result = resultJSON.getString("result");
+                    what = resultJSON.getString("what");
+                    if (resultJSON.has("secret_token")) {
+                        Toast.makeText(this_activity, "회원가입에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                        secret_token = resultJSON.getString("secret_token");
+                        savePreferences("secret_token", secret_token);
+                        Intent i = new Intent(this_activity, GroupList.class);
+                        startActivity(i);
+                        this_activity.finish();
+                    } else {
+                        Toast.makeText(this_activity, "회원가입에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                    Log.d("task_result", "result = " + resultJSON);
+                } catch (JSONException e) {
+                    Log.d("JSONException", "ERROR " + e.getMessage());
                 }
-                Log.d("task_result", "result = " + resultJSON);
-            } catch (JSONException e) {
-                Log.d("JSONException", "ERROR " + e.getMessage());
+            } else {
+                Toast.makeText(this_activity, "데이터를 불러오기를 실패하였습니다.", Toast.LENGTH_SHORT).show();
             }
         }
     }

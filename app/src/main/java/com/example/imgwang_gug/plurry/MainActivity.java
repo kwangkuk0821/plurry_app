@@ -352,6 +352,8 @@ public class MainActivity extends AppCompatActivity {
                         right.put("cmd", 9);
                         int maxX = (int)(width * ((float)3/8));
                         int maxY = (int)(height * ((float)3/8));
+
+                        Log.d("angle", "angle : " + angle);
                         int left_speed;
                         int right_speed;
                         if(angle == 0) {
@@ -361,21 +363,22 @@ public class MainActivity extends AppCompatActivity {
                             int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100))) * -1;
                             int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100)));
                             if(x > 0) {
-                                left_speed = defaultVelocity + plusY + plusX;
-                                right_speed = defaultVelocity + plusY;
-                            } else {
                                 left_speed = defaultVelocity + plusY;
                                 right_speed = defaultVelocity + plusY + plusX;
-                            }
-                        } else if(angle > 120 && angle <= -120) {
-                            int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100)));
-                            int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100)));
-                            if(x > 0) {
-                                left_speed = (defaultVelocity * -1) + plusY + plusX;
-                                right_speed = (defaultVelocity * -1) + plusY;
                             } else {
+                                left_speed = defaultVelocity + plusY + plusX;
+                                right_speed = defaultVelocity + plusY;
+                            }
+                        } else if(angle > 120 || angle <= -120) {
+                            int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100)));
+                            int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100))) * -1;
+                            Log.d("plusXPlusY", "plusX : " + plusX + " plusY : " + plusY);
+                            if(x > 0) {
                                 left_speed = (defaultVelocity * -1) + plusY;
                                 right_speed = (defaultVelocity * -1) + plusY + plusX;
+                            } else {
+                                left_speed = (defaultVelocity * -1) + plusY + plusX;
+                                right_speed = (defaultVelocity * -1) + plusY;
                             }
 
                         } else if(angle > 60 && angle <= 120) {
@@ -398,6 +401,8 @@ public class MainActivity extends AppCompatActivity {
                             left_speed = 0;
                             right_speed = 0;
                         }
+                        Log.e("speed", "left = " + left_speed);
+                        Log.e("speed", "right = " + right_speed);
                         left.put("speed", left_speed);
                         right.put("speed", right_speed);
                         client[move_product].send(left.toString());
@@ -412,11 +417,18 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     protected void onStop() {
-        Log.d("stop","stop!!!!!!!!!");
         for(int i = 0; i < client.length;i++) {
             if(client[i] != null) client[i].disconnect();
         }
         super.onStop();
+    }
+
+    @Override
+    protected void onRestart() {
+        for(int i = 0; i < client.length;i++) {
+            if(client[i] != null) client[i].connect();
+        }
+        super.onRestart();
     }
 
     @Override

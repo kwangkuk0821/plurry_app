@@ -90,37 +90,41 @@ public class Login extends AppCompatActivity {
 
         protected void onPostExecute(String data) {
             loginPending.dismiss();
-            // result is what you got from your connection
-            JSONObject resultJSON = null;
-            String result = null;
-            String what = null;
-            String secret_token = null;
-            try {
-                resultJSON = new JSONObject(data);
-                result = resultJSON.getString("result");
-                what = resultJSON.getString("what");
-                if (what.equals("sign_in")) {
-                    if (resultJSON.has("secret_token")) {
-                        Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                        secret_token = resultJSON.getString("secret_token");
-                        savePreferences("secret_token", secret_token);
-                        Intent i = new Intent(this_activity, GroupList.class);
-                        startActivity(i);
-                        this_activity.finish();
-                    } else {
-                        Toast.makeText(this_activity, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+            if (!data.equals("fail")) {
+                // result is what you got from your connection
+                JSONObject resultJSON = null;
+                String result = null;
+                String what = null;
+                String secret_token = null;
+                try {
+                    resultJSON = new JSONObject(data);
+                    result = resultJSON.getString("result");
+                    what = resultJSON.getString("what");
+                    if (what.equals("sign_in")) {
+                        if (resultJSON.has("secret_token")) {
+                            Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                            secret_token = resultJSON.getString("secret_token");
+                            savePreferences("secret_token", secret_token);
+                            Intent i = new Intent(this_activity, GroupList.class);
+                            startActivity(i);
+                            this_activity.finish();
+                        } else {
+                            Toast.makeText(this_activity, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    } else if (what.equals("sign_in_token")) {
+                        if (result.equals("success")) {
+                            Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
+                            Intent i = new Intent(this_activity, GroupList.class);
+                            startActivity(i);
+                            this_activity.finish();
+                        }
                     }
-                } else if(what.equals("sign_in_token")) {
-                    if(result.equals("success")) {
-                        Toast.makeText(this_activity, "로그인에 성공하였습니다.", Toast.LENGTH_SHORT).show();
-                        Intent i = new Intent(this_activity, GroupList.class);
-                        startActivity(i);
-                        this_activity.finish();
-                    }
+                    Log.d("task_result", "result = " + resultJSON);
+                } catch (JSONException e) {
+                    Log.d("JSONException", "ERROR " + e.getMessage());
                 }
-                Log.d("task_result", "result = " + resultJSON);
-            } catch (JSONException e) {
-                Log.d("JSONException", "ERROR " + e.getMessage());
+            } else {
+                Toast.makeText(this_activity, "데이터를 불러오기를 실패하였습니다.", Toast.LENGTH_SHORT).show();
             }
         }
     }

@@ -79,9 +79,9 @@ public class CreateSchedule extends AppCompatActivity {
         super.onPause();
     }
     @Override
-    protected void onResume() {
+    protected void onRestart() {
         openWebsocket(product);
-        super.onResume();
+        super.onRestart();
     }
 
     public void openWebsocket(String product_id) {
