@@ -20,15 +20,12 @@ import com.plurry.plurry.websocket.WebSocketClient;
 import com.plurry.plurry.joystick.JoystickView;
 import com.plurry.plurry.joystick.JoystickView.OnJoystickMoveListener;
 
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -58,13 +55,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        tokenCheck();
+        setUnit();
+        makeNavigationDrawer();
+    }
 
+    private void setUnit() {
         feed_area = (LinearLayout) findViewById(R.id.feed_area);
         joystick_area = (LinearLayout) findViewById(R.id.joystick_area);
         feed_amount = (SeekBar) findViewById(R.id.feed_amount);
         feed_text = (TextView) findViewById(R.id.feed_text);
         joystick = (JoystickView) findViewById(R.id.joystickView);
+    }
 
+    private void tokenCheck() {
         Bundle b = getIntent().getExtras();
         group = b.getString("group");
 
@@ -79,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
                     "secret_token=" + token
             );
         }
+    }
+
+    private void makeNavigationDrawer() {
         //메뉴 빛 툴바
         final Toolbar toolbar = (Toolbar) findViewById(R.id.app_bar);
         setSupportActionBar(toolbar);
@@ -115,7 +122,6 @@ public class MainActivity extends AppCompatActivity {
 
         navList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, navItems));
         navList.setOnItemClickListener(new DrawerItemClickListener());
-
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
@@ -176,9 +182,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void websocket(String product_id, int type) {
-        List<BasicNameValuePair> extraHeaders = Arrays.asList(
-                new BasicNameValuePair("Cookie", "session=" + token)
-        );
         client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
             @Override
             public void onConnect() {
@@ -206,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("Error", "Error!", error);
             }
 
-        }, extraHeaders);
+        }, null);
 
         client[type].connect();
     }
