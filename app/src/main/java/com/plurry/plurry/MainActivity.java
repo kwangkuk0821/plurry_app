@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -16,9 +16,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
 
-import com.example.imgwang_gug.plurry.websocket.WebSocketClient;
-import com.example.imgwang_gug.plurry.joystick.JoystickView;
-import com.example.imgwang_gug.plurry.joystick.JoystickView.OnJoystickMoveListener;
+import com.plurry.plurry.websocket.WebSocketClient;
+import com.plurry.plurry.joystick.JoystickView;
+import com.plurry.plurry.joystick.JoystickView.OnJoystickMoveListener;
 
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;

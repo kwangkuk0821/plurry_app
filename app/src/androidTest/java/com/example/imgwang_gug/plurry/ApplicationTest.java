@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

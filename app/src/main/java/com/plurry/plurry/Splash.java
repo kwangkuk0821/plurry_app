@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;

@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -33,8 +33,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.example.imgwang_gug.plurry.Schedule.*;
-import com.example.imgwang_gug.plurry.websocket.WebSocketClient;
+import static com.plurry.plurry.Schedule.*;
+import com.plurry.plurry.websocket.WebSocketClient;
 
 public class ScheduleList extends AppCompatActivity {
 

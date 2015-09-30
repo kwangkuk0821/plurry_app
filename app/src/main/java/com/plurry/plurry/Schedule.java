@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 /**
  * Created by imgwang-gug on 2015. 9. 21..

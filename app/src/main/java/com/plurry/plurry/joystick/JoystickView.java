@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry.joystick;
+package com.plurry.plurry.joystick;
 
 import android.content.Context;
 import android.graphics.Canvas;

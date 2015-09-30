@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry.websocket;
+package com.plurry.plurry.websocket;
 
 import android.os.Handler;
 import android.os.HandlerThread;

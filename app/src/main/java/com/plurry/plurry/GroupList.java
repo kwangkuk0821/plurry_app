@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -30,7 +30,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static com.example.imgwang_gug.plurry.Group.GROUP_COLUMN;
+import static com.plurry.plurry.Group.GROUP_COLUMN;
 
 public class GroupList extends AppCompatActivity {
 

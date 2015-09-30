@@ -80,7 +80,7 @@
                     android:gravity="center"
                     android:visibility="invisible">
 
-                    <com.example.imgwang_gug.plurry.joystick.JoystickView
+                    <com.plurry.plurry.joystick.JoystickView
                         android:id="@+id/joystickView"
                         android:layout_width="400px"
                         android:layout_height="400px"/>

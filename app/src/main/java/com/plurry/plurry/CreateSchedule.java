@@ -1,4 +1,4 @@
-package com.example.imgwang_gug.plurry;
+package com.plurry.plurry;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -25,7 +25,7 @@ import org.w3c.dom.Text;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import com.example.imgwang_gug.plurry.websocket.WebSocketClient;
+import com.plurry.plurry.websocket.WebSocketClient;
 
 public class CreateSchedule extends AppCompatActivity {
 

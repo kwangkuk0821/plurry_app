@@ -28,7 +28,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-package com.example.imgwang_gug.plurry.websocket;
+package com.plurry.plurry.websocket;
 
 import android.util.Log;
 
