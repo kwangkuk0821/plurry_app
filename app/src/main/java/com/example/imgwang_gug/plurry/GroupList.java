@@ -28,6 +28,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+
+import static com.example.imgwang_gug.plurry.Group.GROUP_COLUMN;
 
 public class GroupList extends AppCompatActivity {
 
@@ -36,7 +39,7 @@ public class GroupList extends AppCompatActivity {
     private String prefName = "plurry";
     private String token;
     private ListView group_list_view;
-    private ArrayList<String> group_list;
+    private ArrayList<HashMap> group_list;
     private final String GroupUrl = "http://plurry.cycorld.com:3000/mobile/groups";
     private Activity this_activity = this;
 
@@ -160,24 +163,26 @@ public class GroupList extends AppCompatActivity {
                 try {
                     resultJSON = new JSONObject(data);
                     GroupList = resultJSON.getJSONArray("data");
-                    group_list = new ArrayList<String>();
+                    group_list = new ArrayList<HashMap>();
                     if (GroupList != null) {
                         for (int i = 0; i < GroupList.length(); i++) {
-                            group_list.add(GroupList.get(i).toString());
+                            HashMap h = new HashMap();
+                            h.put(GROUP_COLUMN, GroupList.get(i).toString());
+                            group_list.add(h);
                         }
                     }
-                    final ArrayAdapter<String> GroupAdapter = new ArrayAdapter<String>(
-                            this_activity, android.R.layout.simple_list_item_1, group_list);
+
+                    GroupAdapter adapter = new GroupAdapter(this_activity, group_list);
                     AdapterView.OnItemClickListener mItemClickListener = new AdapterView.OnItemClickListener() {
                         @Override
                         public void onItemClick(AdapterView parent, View view, int position, long id) {
-                            String selectGroup = group_list.get(position);
+                            HashMap selectGroup = group_list.get(position);
                             Intent i = new Intent(this_activity, MainActivity.class);
-                            i.putExtra("group", selectGroup);
+                            i.putExtra("group", selectGroup.get(GROUP_COLUMN).toString());
                             startActivity(i);
                         }
                     };
-                    group_list_view.setAdapter(GroupAdapter);
+                    group_list_view.setAdapter(adapter);
                     group_list_view.setOnItemClickListener(mItemClickListener);
                     //true => Log.d("data", "result = " + resultJSON.get("data").getClass().equals(JSONArray.class));
                     Log.d("task_result", "result = " + resultJSON);

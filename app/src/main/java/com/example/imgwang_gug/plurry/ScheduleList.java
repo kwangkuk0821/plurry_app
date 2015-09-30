@@ -224,6 +224,8 @@ public class ScheduleList extends AppCompatActivity {
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
+
+
     public class productTask extends RequestTask {
 
 
@@ -449,7 +451,11 @@ public class ScheduleList extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.menu_sign_out) {
+            new logoutTask().execute(
+                    "http://plurry.cycorld.com:3000/mobile/users/sign_out",
+                    "secret_token=" + token
+            );
             return true;
         }
 

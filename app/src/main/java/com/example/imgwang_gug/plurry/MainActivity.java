@@ -37,9 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView feed_text;
     private WebSocketClient[] client;
     private JoystickView joystick;
-    private TextView joystick_debug;
     private LinearLayout feed_area;
-    private RelativeLayout joystick_area;
+    private LinearLayout joystick_area;
     private String token;
     private final int feed_product = 1;
     private final int move_product = 2;
@@ -61,11 +60,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         feed_area = (LinearLayout) findViewById(R.id.feed_area);
-        joystick_area = (RelativeLayout) findViewById(R.id.joystick_area);
+        joystick_area = (LinearLayout) findViewById(R.id.joystick_area);
         feed_amount = (SeekBar) findViewById(R.id.feed_amount);
         feed_text = (TextView) findViewById(R.id.feed_text);
         joystick = (JoystickView) findViewById(R.id.joystickView);
-        joystick_debug = (TextView) findViewById(R.id.joystick_debug);
 
         Bundle b = getIntent().getExtras();
         group = b.getString("group");
@@ -410,7 +408,6 @@ public class MainActivity extends AppCompatActivity {
                     } catch (JSONException e) {
                         Log.e("MYAPP", "unexpected JSON exception", e);
                     }
-                    joystick_debug.setText("x : " + x + " y : " + y);
                 }
             }, JoystickView.DEFAULT_LOOP_INTERVAL);
         }

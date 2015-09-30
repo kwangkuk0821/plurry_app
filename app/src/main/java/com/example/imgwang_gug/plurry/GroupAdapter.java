@@ -1,9 +1,5 @@
 package com.example.imgwang_gug.plurry;
 
-import static com.example.imgwang_gug.plurry.Schedule.*;
-
-import java.util.ArrayList;
-import java.util.HashMap;
 import android.app.Activity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,12 +7,17 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-public class ScheduleAdapter extends BaseAdapter
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import static com.example.imgwang_gug.plurry.Group.GROUP_COLUMN;
+
+public class GroupAdapter extends BaseAdapter
 {
     public ArrayList<HashMap> list;
     Activity activity;
 
-    public ScheduleAdapter(Activity activity, ArrayList<HashMap> list) {
+    public GroupAdapter(Activity activity, ArrayList<HashMap> list) {
         super();
         this.activity = activity;
         this.list = list;
@@ -59,10 +60,9 @@ public class ScheduleAdapter extends BaseAdapter
 
         if (convertView == null)
         {
-            convertView = inflater.inflate(R.layout.multiple_listview, null);
+            convertView = inflater.inflate(R.layout.group_listview, null);
             holder = new ViewHolder();
-            holder.txtFirst = (TextView) convertView.findViewById(R.id.TimeText);
-            holder.txtSecond = (TextView) convertView.findViewById(R.id.AmountText);
+            holder.txtFirst = (TextView) convertView.findViewById(R.id.GroupText);
             convertView.setTag(holder);
         }
         else
@@ -72,8 +72,7 @@ public class ScheduleAdapter extends BaseAdapter
 
         if(list != null) {
             HashMap map = list.get(position);
-            holder.txtFirst.setText(map.get(TIME_COLUMN).toString());
-            holder.txtSecond.setText(map.get(AMOUNT_COLUMN).toString());
+            holder.txtFirst.setText(map.get(GROUP_COLUMN).toString());
         }
 
         return convertView;

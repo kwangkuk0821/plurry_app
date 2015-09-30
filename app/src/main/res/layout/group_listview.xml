@@ -7,24 +7,15 @@
         android:layout_width="0dp"
         android:layout_height="30dp"
         android:layout_weight="2"
-        android:src="@drawable/alarm_icon"/>
+        android:src="@drawable/group_icon"/>
 
     <TextView
-        android:id="@+id/TimeText"
+        android:id="@+id/GroupText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textSize="20dp"
-        android:layout_weight="4">
-    </TextView>
-
-    <TextView
-        android:id="@+id/AmountText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textSize="20dp"
-        android:layout_weight="4">
+        android:layout_weight="8">
     </TextView>
 
 </LinearLayout>
