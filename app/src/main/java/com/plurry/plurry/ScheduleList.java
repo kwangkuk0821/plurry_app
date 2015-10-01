@@ -22,7 +22,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -300,9 +299,6 @@ public class ScheduleList extends AppCompatActivity {
     }
 
     public void openWebsocket(String product_id) {
-        List<BasicNameValuePair> extraHeaders = Arrays.asList(
-                new BasicNameValuePair("Cookie", "session=" + token)
-        );
         if(client != null) {
             client.disconnect();
             client = null;
@@ -338,7 +334,7 @@ public class ScheduleList extends AppCompatActivity {
                 Log.e("Error", "Error!", error);
             }
 
-        }, extraHeaders);
+        }, null);
 
         rs_client = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/debug/" + product_id), new WebSocketClient.Listener() {
             @Override
@@ -379,7 +375,7 @@ public class ScheduleList extends AppCompatActivity {
                 Log.e("Error", "Error!", error);
             }
 
-        }, extraHeaders);
+        }, null);
 
         client.connect();
         rs_client.connect();

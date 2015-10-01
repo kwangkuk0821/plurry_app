@@ -1,24 +1,52 @@
 package com.plurry.plurry;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.TextureView;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 
+import com.ericsson.research.owr.Owr;
+import com.ericsson.research.owr.sdk.InvalidDescriptionException;
+import com.ericsson.research.owr.sdk.RtcCandidate;
+import com.ericsson.research.owr.sdk.RtcCandidates;
+import com.ericsson.research.owr.sdk.RtcConfig;
+import com.ericsson.research.owr.sdk.RtcConfigs;
+import com.ericsson.research.owr.sdk.RtcSession;
+import com.ericsson.research.owr.sdk.RtcSessions;
+import com.ericsson.research.owr.sdk.SessionDescription;
+import com.ericsson.research.owr.sdk.SessionDescriptions;
+import com.ericsson.research.owr.sdk.SimpleStreamSet;
+import com.plurry.plurry.openwebrtc.Config;
+import com.plurry.plurry.openwebrtc.SignalingChannel;
 import com.plurry.plurry.websocket.WebSocketClient;
 import com.plurry.plurry.joystick.JoystickView;
 import com.plurry.plurry.joystick.JoystickView.OnJoystickMoveListener;
+
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+import com.ericsson.research.owr.sdk.VideoView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,8 +54,46 @@ import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.util.HashMap;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        SignalingChannel.JoinListener,
+        SignalingChannel.DisconnectListener,
+        SignalingChannel.SessionFullListener,
+        SignalingChannel.MessageListener,
+        SignalingChannel.PeerDisconnectListener,
+        RtcSession.OnLocalCandidateListener,
+        RtcSession.OnLocalDescriptionListener {
+
+    //openwebrtc
+
+    private static final String TAG = "NativeCall";
+
+    private static final String PREFERENCE_KEY_SERVER_URL = "url";
+    private static final int SETTINGS_ANIMATION_DURATION = 400;
+    private static final int SETTINGS_ANIMATION_ANGLE = 90;
+
+    static {
+        Log.d(TAG, "Initializing OpenWebRTC");
+        Owr.init();
+        Owr.runInBackground();
+    }
+
+    private Button mJoinButton;
+    private Button mCallButton;
+    private EditText mSessionInput;
+
+    private SignalingChannel mSignalingChannel;
+    private InputMethodManager mInputMethodManager;
+    private WindowManager mWindowManager;
+    private SignalingChannel.PeerChannel mPeerChannel;
+    private RtcSession mRtcSession;
+    private SimpleStreamSet mStreamSet;
+    private VideoView mRemoteView;
+    private RtcConfig mRtcConfig;
+
+    //
+
 
     private static HttpURLConnection conn;
     private SeekBar feed_amount;
@@ -36,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     private JoystickView joystick;
     private LinearLayout feed_area;
     private LinearLayout joystick_area;
+    private LinearLayout video_area;
     private String token;
     private final int feed_product = 1;
     private final int move_product = 2;
@@ -50,22 +117,250 @@ public class MainActivity extends AppCompatActivity {
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
     private ListView navList;
+    private ProgressDialog videopending;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        //webrtc
+        initUi();
+
+        mInputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mRtcConfig = RtcConfigs.defaultConfig(Config.STUN_SERVER);
+
         tokenCheck();
-        setUnit();
         makeNavigationDrawer();
     }
 
-    private void setUnit() {
+    private void updateVideoView(boolean running) {
+        if (mStreamSet != null) {
+            TextureView remoteView = (TextureView) findViewById(R.id.remote_view);
+            remoteView.setVisibility(running ? View.VISIBLE : View.INVISIBLE);
+            if (running) {
+                mRemoteView.setView(remoteView);
+                //mStreamSet.setDeviceOrientation(mWindowManager.getDefaultDisplay().getRotation());
+                Log.d(TAG, "" + mWindowManager.getDefaultDisplay().getRotation());
+            } else {
+                mRemoteView.stop();
+            }
+        }
+    }
+
+    public void initUi() {
+        setContentView(R.layout.activity_main);
+
+        mCallButton = (Button) findViewById(R.id.call);
+        mJoinButton = (Button) findViewById(R.id.join);
+        mSessionInput = (EditText) findViewById(R.id.session_id);
+        mJoinButton.setEnabled(true);
+
         feed_area = (LinearLayout) findViewById(R.id.feed_area);
         joystick_area = (LinearLayout) findViewById(R.id.joystick_area);
         feed_amount = (SeekBar) findViewById(R.id.feed_amount);
         feed_text = (TextView) findViewById(R.id.feed_text);
         joystick = (JoystickView) findViewById(R.id.joystickView);
+        video_area = (LinearLayout) findViewById(R.id.videoLayout);
+
+    }
+    /*
+    public void onSelfViewClicked(final View view) {
+        Log.d(TAG, "onSelfViewClicked");
+        if (mStreamSet != null) {
+            if (mSelfView != null) {
+                mSelfView.setRotation((mSelfView.getRotation() + 1) % 4);
+            }
+        }
+//        mStreamSet.toggleCamera();
+    }
+    */
+
+    public void onJoinClicked(final View view) {
+        Log.d(TAG, "onJoinClicked");
+
+        String sessionId = mSessionInput.getText().toString();
+        if (sessionId.isEmpty()) {
+            mSessionInput.requestFocus();
+            mInputMethodManager.showSoftInput(mSessionInput, InputMethodManager.SHOW_IMPLICIT);
+            return;
+        }
+
+        mInputMethodManager.hideSoftInputFromWindow(mSessionInput.getWindowToken(), 0);
+        mSessionInput.setEnabled(false);
+        mJoinButton.setEnabled(false);
+
+        mSignalingChannel = new SignalingChannel(getUrl(), sessionId);
+        mSignalingChannel.setJoinListener(this);
+        mSignalingChannel.setDisconnectListener(this);
+        mSignalingChannel.setSessionFullListener(this);
+
+        mStreamSet = SimpleStreamSet.defaultConfig(true, true);
+        mRemoteView = mStreamSet.createRemoteView();
+        mRemoteView.setRotation(0);
+        updateVideoView(true);
+    }
+
+    @Override
+    public void onPeerJoin(final SignalingChannel.PeerChannel peerChannel) {
+        Log.v(TAG, "onPeerJoin => " + peerChannel.getPeerId());
+        mCallButton.setEnabled(true);
+        mPeerChannel = peerChannel;
+        mPeerChannel.setDisconnectListener(this);
+        mPeerChannel.setMessageListener(this);
+
+        mRtcSession = RtcSessions.create(mRtcConfig);
+        mRtcSession.setOnLocalCandidateListener(this);
+        mRtcSession.setOnLocalDescriptionListener(this);
+
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(this_activity);
+        alert.setTitle("알림(Alert)!");
+        alert.setCancelable(false);
+        alert.setMessage("화상통화를 연결하시겠습니까?");
+        alert.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+                mCallButton.performClick();
+            }
+        });
+
+        alert.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+            }
+        });
+        alert.show();
+    }
+
+    @Override
+    public void onPeerDisconnect(final SignalingChannel.PeerChannel peerChannel) {
+        Log.d(TAG, "onPeerDisconnect => " + peerChannel.getPeerId());
+        mRtcSession.stop();
+        mPeerChannel = null;
+        updateVideoView(false);
+        mSessionInput.setEnabled(true);
+        mJoinButton.setEnabled(true);
+        mCallButton.setEnabled(false);
+    }
+
+    @Override
+    public synchronized void onMessage(final JSONObject json) {
+        if (json.has("candidate")) {
+            JSONObject candidate = json.optJSONObject("candidate");
+            Log.v(TAG, "candidate: " + candidate);
+            RtcCandidate rtcCandidate = RtcCandidates.fromJsep(candidate);
+            if (rtcCandidate != null) {
+                mRtcSession.addRemoteCandidate(rtcCandidate);
+            } else {
+                Log.w(TAG, "invalid candidate: " + candidate);
+            }
+        }
+        if (json.has("sdp")) {
+            JSONObject sdp = json.optJSONObject("sdp");
+            Log.v(TAG, "sdp: " + sdp);
+            try {
+                SessionDescription sessionDescription = SessionDescriptions.fromJsep(sdp);
+                if (sessionDescription.getType() == SessionDescription.Type.OFFER) {
+                    onInboundCall(sessionDescription);
+                } else {
+                    onAnswer(sessionDescription);
+                }
+            } catch (InvalidDescriptionException e) {
+                e.printStackTrace();
+            }
+        }
+        if (json.has("orientation")) {
+//                handleOrientation(json.getInt("orientation"));
+        }
+    }
+
+    @Override
+    public void onLocalCandidate(final RtcCandidate candidate) {
+        if (mPeerChannel != null) {
+            try {
+                JSONObject json = new JSONObject();
+                json.putOpt("candidate", RtcCandidates.toJsep(candidate));
+                json.getJSONObject("candidate").put("sdpMid", "video");
+                Log.d(TAG, "sending candidate: " + json);
+                mPeerChannel.send(json);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onCallClicked(final View view) {
+        Log.d(TAG, "onCallClicked");
+
+        videopending = new ProgressDialog(this_activity);
+        videopending.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        videopending.setMessage("영상을 불러오는 중 입니다...");
+
+        videopending.show();
+
+        mRtcSession.start(mStreamSet);
+        mCallButton.setEnabled(false);
+    }
+
+    private void onInboundCall(final SessionDescription sessionDescription) {
+        try {
+            mRtcSession.setRemoteDescription(sessionDescription);
+            mRtcSession.start(mStreamSet);
+        } catch (InvalidDescriptionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void onAnswer(final SessionDescription sessionDescription) {
+        videopending.dismiss();
+        video_area.setBackgroundColor(Color.BLACK);
+        if (mRtcSession != null) {
+            try {
+                mRtcSession.setRemoteDescription(sessionDescription);
+            } catch (InvalidDescriptionException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onLocalDescription(final SessionDescription localDescription) {
+        if (mPeerChannel != null) {
+            try {
+                JSONObject json = new JSONObject();
+                json.putOpt("sdp", SessionDescriptions.toJsep(localDescription));
+                Log.d(TAG, "sending sdp: " + json);
+                mPeerChannel.send(json);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onDisconnect() {
+        Toast.makeText(this, "Disconnected from server", Toast.LENGTH_LONG).show();
+        updateVideoView(false);
+        try {
+            mStreamSet = null;
+            mRtcSession.stop();
+            mRtcSession = null;
+            mSignalingChannel = null;
+            video_area.setBackgroundColor(Color.WHITE);
+        } catch (NullPointerException e) {
+        }
+    }
+
+    @Override
+    public void onSessionFull() {
+        Toast.makeText(this, "Session is full", Toast.LENGTH_LONG).show();
+        mJoinButton.setEnabled(true);
+    }
+
+    private String getUrl() {
+        return PreferenceManager.getDefaultSharedPreferences(this)
+                .getString(PREFERENCE_KEY_SERVER_URL, Config.DEFAULT_SERVER_ADDRESS);
     }
 
     private void tokenCheck() {
@@ -156,6 +451,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        initUi();
+        updateVideoView(true);
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
@@ -247,11 +544,17 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     resultJSON = new JSONObject(data);
                     products = resultJSON.getJSONArray("data");
-                    client = new WebSocketClient[4];
+                    client = new WebSocketClient[3];
                     for(int i = 0; i < products.length();i++) {
                         JSONObject product = (JSONObject) products.get(i);
-                        websocket(product.getString("product_id"), product.getInt("product_type"));
+                        if(product.getInt("product_type") == 1 || product.getInt("product_type") == 2) {
+                            websocket(product.getString("product_id"), product.getInt("product_type"));
+                        } else if(product.getInt("product_type") == 3) {
+                            mSessionInput.setText(product.getString("owr_session_id"));
+                            mJoinButton.performClick();
+                        }
                     }
+
                     removeProductView();
                     Log.d("task_result", "result = " + resultJSON);
                     Log.d("websockes", "result = " + client);
@@ -416,11 +719,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     @Override
-    protected void onStop() {
-        for(int i = 0; i < client.length;i++) {
-            if(client[i] != null) client[i].disconnect();
+    protected void onPause() {
+        try {
+            for(int i = 0; i < client.length;i++) {
+                if(client[i] != null) client[i].disconnect();
+            }
+            if(mRtcSession != null) mRtcSession.stop();
+            mPeerChannel = null;
+            updateVideoView(false);
+            mSessionInput.setEnabled(true);
+            mJoinButton.setEnabled(true);
+            mCallButton.setEnabled(false);
+        } catch (Exception e) {
         }
-        super.onStop();
+        super.onPause();
     }
 
     @Override
