@@ -121,11 +121,10 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
 
     }
 
-    private void joinRoom(String session) {
+    private void joinRoom(String phone, String session) {
         if(session.isEmpty()) return;
 
-        String toast = "";
-        toast = "Entering video room \"" + session + "\".";
+        String toast = "스마트폰 코드 [" + phone + "] 과 연결 되었습니다.";
         Toast.makeText(this_activity, toast, Toast.LENGTH_SHORT).show();
 
         String appKey = getString(R.string.app_key);
@@ -231,9 +230,9 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     }
 
     @Override
-    public void onPause() {
+    public void onStop() {
         //close the connection when the fragment is detached, so the streams are not open.
-        super.onPause();
+        super.onStop();
         for(int i = 0; i < client.length;i++) {
             if(client[i] != null) client[i].disconnect();
         }
@@ -636,8 +635,9 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                         if(product.getInt("product_type") == 1 || product.getInt("product_type") == 2) {
                             websocket(product.getString("product_id"), product.getInt("product_type"));
                         } else if(product.getInt("product_type") == 3) {
+                            String phone = product.getString("code");
                             String session = product.getString("owr_session_id");
-                            joinRoom(session);
+                            joinRoom(phone ,session);
                         }
                     }
 
