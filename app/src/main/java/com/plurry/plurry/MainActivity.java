@@ -5,15 +5,19 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Point;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.*;
 
 import com.plurry.plurry.websocket.WebSocketClient;
@@ -28,9 +32,24 @@ import org.json.JSONObject;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import android.opengl.GLSurfaceView;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.Toast;
+
+import com.plurry.plurry.skylink.*;
+
+import sg.com.temasys.skylink.sdk.config.SkylinkConfig;
+import sg.com.temasys.skylink.sdk.listener.LifeCycleListener;
+import sg.com.temasys.skylink.sdk.listener.MediaListener;
+import sg.com.temasys.skylink.sdk.listener.RemotePeerListener;
+import sg.com.temasys.skylink.sdk.rtc.SkylinkConnection;
+import sg.com.temasys.skylink.sdk.rtc.UserInfo;
+
+public class MainActivity extends AppCompatActivity implements LifeCycleListener, MediaListener, RemotePeerListener {
 
     private static HttpURLConnection conn;
     private SeekBar feed_amount;
@@ -54,9 +73,38 @@ public class MainActivity extends AppCompatActivity {
     private CharSequence mTitle;
     private ListView navList;
 
+    //Skylink
+    private static final String TAG = MainActivity.class.getCanonicalName();
+    public static final String ROOM_NAME = Constants.ROOM_NAME_VIDEO;
+    public static final String MY_USER_NAME = "videoCallUser";
+    private static final String ARG_SECTION_NUMBER = "section_number";
+    //set height width for self-video when in call
+    public static final int WIDTH = 350;
+    public static final int HEIGHT = 350;
+    private LinearLayout parentFragment;
+    private Button toggleAudioButton;
+    private Button toggleVideoButton;
+    private SkylinkConnection skylinkConnection;
+    private String roomName;
+    private String peerId;
+    private ViewGroup.LayoutParams selfLayoutParams;
+    private boolean audioMuted;
+    private boolean videoMuted;
+    private boolean connected;
+    private AudioRouter audioRouter;
+    //Variable End
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initUi();
+        setListeners();
+
+        tokenCheck();
+        makeNavigationDrawer();
+    }
+
+    private void initUi() {
         setContentView(R.layout.activity_main);
 
         feed_area = (LinearLayout) findViewById(R.id.feed_area);
@@ -65,6 +113,341 @@ public class MainActivity extends AppCompatActivity {
         feed_text = (TextView) findViewById(R.id.feed_text);
         joystick = (JoystickView) findViewById(R.id.joystickView);
 
+
+        parentFragment = (LinearLayout) findViewById(R.id.ll_video_call);
+        toggleAudioButton = (Button) findViewById(R.id.toggle_audio);
+        toggleVideoButton = (Button) findViewById(R.id.toggle_video);
+
+    }
+
+    private void joinRoom(String session) {
+        if(session.isEmpty()) return;
+
+        String toast = "";
+        toast = "Entering video room \"" + session + "\".";
+        Toast.makeText(this_activity, toast, Toast.LENGTH_SHORT).show();
+
+        String appKey = getString(R.string.app_key);
+        String appSecret = getString(R.string.app_secret);
+
+        // Initialize the skylink connection
+        initializeSkylinkConnection();
+
+        // Initialize the audio router
+        initializeAudioRouter();
+
+        // Obtaining the Skylink connection string done locally
+        // In a production environment the connection string should be given
+        // by an entity external to the App, such as an App server that holds the Skylink App secret
+        // In order to avoid keeping the App secret within the application
+        String skylinkConnectionString = Utils.
+                getSkylinkConnectionString(session, appKey,
+                        appSecret, new Date(), SkylinkConnection.DEFAULT_DURATION);
+
+        skylinkConnection.connectToRoom(skylinkConnectionString,
+                MY_USER_NAME);
+
+        // Use the Audio router to switch between headphone and headset
+        audioRouter.startAudioRouting(this_activity.getApplicationContext());
+        connected = true;
+    }
+
+    private void setListeners() {
+        toggleAudioButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // If audio is enabled, mute audio and if audio is enabled, mute it
+                audioMuted = !audioMuted;
+
+                if (audioMuted) {
+                    Toast.makeText(this_activity, getString(R.string.muted_audio),
+                            Toast.LENGTH_SHORT).show();
+                    toggleAudioButton.setText(getString(R.string.enable_audio));
+                } else {
+                    Toast.makeText(this_activity, getString(R.string.enabled_audio),
+                            Toast.LENGTH_SHORT).show();
+                    toggleAudioButton.setText(getString(R.string.mute_audio));
+                }
+
+                skylinkConnection.muteLocalAudio(audioMuted);
+            }
+        });
+
+        toggleVideoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // If video is enabled, mute video and if video is enabled, mute it
+                videoMuted = !videoMuted;
+
+                if (videoMuted) {
+                    Toast.makeText(this_activity, getString(R.string.muted_video),
+                            Toast.LENGTH_SHORT).show();
+                    toggleVideoButton.setText(getString(R.string.enable_video));
+                } else {
+                    Toast.makeText(this_activity, getString(R.string.enabled_video),
+                            Toast.LENGTH_SHORT).show();
+                    toggleVideoButton.setText(getString(R.string.mute_video));
+                }
+
+                skylinkConnection.muteLocalVideo(videoMuted);
+            }
+        });
+    }
+
+    private void initializeAudioRouter() {
+        if (audioRouter == null) {
+            audioRouter = AudioRouter.getInstance();
+            audioRouter.init(((AudioManager) this_activity.
+                    getSystemService(android.content.Context.AUDIO_SERVICE)));
+        }
+    }
+
+    private void initializeSkylinkConnection() {
+        if (skylinkConnection == null) {
+            skylinkConnection = SkylinkConnection.getInstance();
+            //the app_key and app_secret is obtained from the temasys developer console.
+            skylinkConnection.init(getString(R.string.app_key),
+                    getSkylinkConfig(), this.this_activity.getApplicationContext());
+            //set listeners to receive callbacks when events are triggered
+            skylinkConnection.setLifeCycleListener(this);
+            skylinkConnection.setMediaListener(this);
+            skylinkConnection.setRemotePeerListener(this);
+        }
+    }
+
+    private SkylinkConfig getSkylinkConfig() {
+        SkylinkConfig config = new SkylinkConfig();
+        //AudioVideo config options can be NO_AUDIO_NO_VIDEO, AUDIO_ONLY, VIDEO_ONLY, AUDIO_AND_VIDEO;
+        config.setAudioVideoSendConfig(SkylinkConfig.AudioVideoConfig.AUDIO_AND_VIDEO);
+        config.setAudioVideoReceiveConfig(SkylinkConfig.AudioVideoConfig.AUDIO_AND_VIDEO);
+        config.setHasPeerMessaging(true);
+        config.setHasFileTransfer(true);
+        config.setTimeout(Constants.TIME_OUT);
+        config.setMirrorLocalView(true);
+        return config;
+    }
+
+    @Override
+    public void onPause() {
+        //close the connection when the fragment is detached, so the streams are not open.
+        super.onPause();
+        for(int i = 0; i < client.length;i++) {
+            if(client[i] != null) client[i].disconnect();
+        }
+        if (skylinkConnection != null && connected) {
+            skylinkConnection.disconnectFromRoom();
+            skylinkConnection.setLifeCycleListener(null);
+            skylinkConnection.setMediaListener(null);
+            skylinkConnection.setRemotePeerListener(null);
+            connected = false;
+            audioRouter.stopAudioRouting(this_activity.getApplicationContext());
+        }
+    }
+
+    /***
+     * Lifecycle Listener Callbacks -- triggered during events that happen during the SDK's lifecycle
+     */
+
+    /**
+     * Triggered when connection is successful
+     *
+     * @param isSuccess
+     * @param message
+     */
+
+    @Override
+    public void onConnect(boolean isSuccess, String message) {
+        if (isSuccess) {
+            toggleAudioButton.setVisibility(View.VISIBLE);
+            toggleVideoButton.setVisibility(View.VISIBLE);
+            Toast.makeText(this_activity, "Connected to room " + roomName + " as " + MY_USER_NAME, Toast.LENGTH_SHORT).show();
+        } else {
+            Log.e(TAG, "Skylink Failed " + message);
+        }
+    }
+
+    @Override
+    public void onLockRoomStatusChange(String remotePeerId, boolean lockStatus) {
+        //Toast.makeText(this_activity, "Peer " + remotePeerId +
+        //       " has changed Room locked status to " + lockStatus, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onWarning(int errorCode, String message) {
+        Log.d(TAG, message + "warning");
+        //Toast.makeText(this_activity, "Warning is errorCode" + errorCode, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onDisconnect(int errorCode, String message) {
+        Log.d(TAG, message + " disconnected");
+        //Toast.makeText(this_activity, "onDisconnect " + message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onReceiveLog(String message) {
+        Log.d(TAG, message + " on receive log");
+    }
+
+    /**
+     * Media Listeners Callbacks - triggered when receiving changes to Media Stream from the remote peer
+     */
+
+    /**
+     * Triggered after the user's local media is captured.
+     *
+     * @param videoView
+     */
+    @Override
+    public void onLocalMediaCapture(GLSurfaceView videoView) {
+        if (videoView != null) {
+            View self = parentFragment.findViewWithTag("self");
+            videoView.setTag("self");
+            videoView.setVisibility(View.GONE);
+            // Allow self view to switch between different cameras (if any) when tapped.
+            videoView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    skylinkConnection.switchCamera();
+                }
+            });
+
+            if (self == null) {
+                //show media on screen
+                parentFragment.removeView(videoView);
+                parentFragment.addView(videoView);
+            } else {
+                videoView.setLayoutParams(self.getLayoutParams());
+
+                // If peer video exists, remove it first.
+                View peer = parentFragment.findViewWithTag("peer");
+                if (peer != null) {
+                    parentFragment.removeView(peer);
+                }
+
+                // Remove the old self video and add the new one.
+                parentFragment.removeView(self);
+                parentFragment.addView(videoView);
+
+                // Return the peer video, if it was there before.
+                if (peer != null) {
+                    parentFragment.addView(peer);
+                }
+            }
+
+        }
+    }
+
+    @Override
+    public void onVideoSizeChange(String peerId, Point size) {
+        Log.d(TAG, "PeerId: " + peerId + " got size " + size.toString());
+    }
+
+    @Override
+    public void onRemotePeerAudioToggle(String remotePeerId, boolean isMuted) {
+        String message = null;
+        if (isMuted) {
+            message = "Your peer muted their audio";
+        } else {
+            message = "Your peer unmuted their audio";
+        }
+
+        //Toast.makeText(this_activity, message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onRemotePeerVideoToggle(String peerId, boolean isMuted) {
+        String message = null;
+        if (isMuted)
+            message = "Your peer muted video";
+        else
+            message = "Your peer unmuted their video";
+
+        //Toast.makeText(this_activity, message, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Remote Peer Listener Callbacks - triggered during events that happen when data or connection
+     * with remote peer changes
+     */
+
+    @Override
+    public void onRemotePeerJoin(String remotePeerId, Object userData, boolean hasDataChannel) {
+        Toast.makeText(this_activity, "상대방과 연결되었습니다.", Toast.LENGTH_SHORT).show();
+        UserInfo remotePeerUserInfo = skylinkConnection.getUserInfo(remotePeerId);
+        Log.d(TAG, "isAudioStereo " + remotePeerUserInfo.isAudioStereo());
+        Log.d(TAG, "video height " + remotePeerUserInfo.getVideoHeight());
+        Log.d(TAG, "video width " + remotePeerUserInfo.getVideoHeight());
+        Log.d(TAG, "video frameRate " + remotePeerUserInfo.getVideoFps());
+    }
+
+    @Override
+    public void onRemotePeerMediaReceive(String remotePeerId, GLSurfaceView videoView) {
+        if (videoView == null) {
+            return;
+        }
+
+        if (!TextUtils.isEmpty(this.peerId) && !remotePeerId.equals(this.peerId)) {
+            Toast.makeText(this_activity, "이미 상대방과 연결되어 있는 상태입니다.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Resize self view
+        View self = parentFragment.findViewWithTag("self");
+        if (this.selfLayoutParams == null) {
+            // Record the original size of the layout
+            this.selfLayoutParams = self.getLayoutParams();
+        }
+
+        self.setLayoutParams(new ViewGroup.LayoutParams(WIDTH, HEIGHT));
+        parentFragment.removeView(self);
+        parentFragment.addView(self);
+
+        // Remove previous peer video if it exist
+        View viewToRemove = parentFragment.findViewWithTag("peer");
+        if (viewToRemove != null) {
+            parentFragment.removeView(viewToRemove);
+        }
+
+        // Add new peer video
+        videoView.setTag("peer");
+        parentFragment.addView(videoView);
+
+        this.peerId = remotePeerId;
+    }
+
+    @Override
+    public void onRemotePeerLeave(String remotePeerId, String message) {
+        Toast.makeText(this_activity, "상대방과의 연결이 끊어졌습니다.", Toast.LENGTH_SHORT).show();
+        if (remotePeerId != null && remotePeerId.equals(this.peerId)) {
+            this.peerId = null;
+            View peerView = parentFragment.findViewWithTag("peer");
+            parentFragment.removeView(peerView);
+
+            // Resize self view to original size
+            if (this.selfLayoutParams != null) {
+                View self = parentFragment.findViewWithTag("self");
+                self.setLayoutParams(selfLayoutParams);
+            }
+        }
+    }
+
+    @Override
+    public void onRemotePeerUserDataReceive(String remotePeerId, Object userData) {
+        Log.d(TAG, "onRemotePeerUserDataReceive " + remotePeerId);
+    }
+
+    @Override
+    public void onOpenDataConnection(String peerId) {
+        Log.d(TAG, "onOpenDataConnection");
+    }
+
+    //Skylink Code end!
+
+    private void tokenCheck() {
         Bundle b = getIntent().getExtras();
         group = b.getString("group");
 
@@ -79,6 +462,9 @@ public class MainActivity extends AppCompatActivity {
                     "secret_token=" + token
             );
         }
+    }
+
+    private void makeNavigationDrawer() {
         //메뉴 빛 툴바
         final Toolbar toolbar = (Toolbar) findViewById(R.id.app_bar);
         setSupportActionBar(toolbar);
@@ -115,7 +501,6 @@ public class MainActivity extends AppCompatActivity {
 
         navList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, navItems));
         navList.setOnItemClickListener(new DrawerItemClickListener());
-
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
@@ -244,11 +629,17 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     resultJSON = new JSONObject(data);
                     products = resultJSON.getJSONArray("data");
-                    client = new WebSocketClient[4];
+                    client = new WebSocketClient[3];
                     for(int i = 0; i < products.length();i++) {
                         JSONObject product = (JSONObject) products.get(i);
-                        websocket(product.getString("product_id"), product.getInt("product_type"));
+                        if(product.getInt("product_type") == 1 || product.getInt("product_type") == 2) {
+                            websocket(product.getString("product_id"), product.getInt("product_type"));
+                        } else if(product.getInt("product_type") == 3) {
+                            String session = product.getString("owr_session_id");
+                            joinRoom(session);
+                        }
                     }
+
                     removeProductView();
                     Log.d("task_result", "result = " + resultJSON);
                     Log.d("websockes", "result = " + client);
@@ -411,13 +802,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, JoystickView.DEFAULT_LOOP_INTERVAL);
         }
-    }
-    @Override
-    protected void onStop() {
-        for(int i = 0; i < client.length;i++) {
-            if(client[i] != null) client[i].disconnect();
-        }
-        super.onStop();
     }
 
     @Override

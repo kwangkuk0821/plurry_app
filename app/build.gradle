@@ -1,4 +1,17 @@
 apply plugin: 'com.android.application'
+apply plugin: "sonar-runner"
+
+sonarRunner {
+    sonarProperties {
+        property "sonar.projectKey", "AND-Sample"
+        property "sonar.projectName", "Skylink Android SDK - Sample App"
+        property "sonar.projectVersion", "0.9.5"
+        property "sonar.language", "java"
+        property "sonar.sources", "src"
+        property "sonar.binaries", "build"
+        property "sonar.profile", "Temasys-Android"
+    }
+}
 
 android {
     compileSdkVersion 23
@@ -7,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId "com.plurry.plurry"
-        minSdkVersion 15
+        minSdkVersion 17
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -20,10 +33,32 @@ android {
     }
 }
 
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.2.3'
+    }
+}
+
+repositories {
+    maven {
+        url = 'http://archiva.temasys.com.sg/repository/internal'
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.balysv.materialmenu:material-menu:1.4.0'
     compile 'org.apache.httpcomponents:httpcore:4.4.2'
     compile 'org.apache.httpcomponents:httpclient:4.5'
+    compile(group: 'sg.com.temasys.skylink.sdk',
+            name: 'skylink_sdk',
+            version: '0.9.5-RELEASE',
+            ext: 'aar'){
+        transitive = true
+    }
 }
