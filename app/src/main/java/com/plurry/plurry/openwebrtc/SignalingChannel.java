@@ -87,6 +87,7 @@ public class SignalingChannel {
         new Thread(new Runnable() {
             @Override
             public void run() {
+
                 HttpClient httpClient = new DefaultHttpClient();
                 HttpGet httpGet = new HttpGet(mServerToClientUrl);
 
@@ -123,6 +124,7 @@ public class SignalingChannel {
                     });
                 }
             }
+
         }).start();
     }
 

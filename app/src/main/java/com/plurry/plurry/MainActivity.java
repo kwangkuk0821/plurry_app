@@ -92,9 +92,6 @@ public class MainActivity extends AppCompatActivity implements
     private VideoView mRemoteView;
     private RtcConfig mRtcConfig;
 
-    //
-
-
     private static HttpURLConnection conn;
     private SeekBar feed_amount;
     private TextView feed_text;
@@ -164,17 +161,6 @@ public class MainActivity extends AppCompatActivity implements
         video_area = (LinearLayout) findViewById(R.id.videoLayout);
 
     }
-    /*
-    public void onSelfViewClicked(final View view) {
-        Log.d(TAG, "onSelfViewClicked");
-        if (mStreamSet != null) {
-            if (mSelfView != null) {
-                mSelfView.setRotation((mSelfView.getRotation() + 1) % 4);
-            }
-        }
-//        mStreamSet.toggleCamera();
-    }
-    */
 
     public void onJoinClicked(final View view) {
         Log.d(TAG, "onJoinClicked");
@@ -242,6 +228,7 @@ public class MainActivity extends AppCompatActivity implements
         mSessionInput.setEnabled(true);
         mJoinButton.setEnabled(true);
         mCallButton.setEnabled(false);
+        video_area.setBackgroundColor(Color.WHITE);
     }
 
     @Override
@@ -317,6 +304,7 @@ public class MainActivity extends AppCompatActivity implements
         video_area.setBackgroundColor(Color.BLACK);
         if (mRtcSession != null) {
             try {
+                updateVideoView(true);
                 mRtcSession.setRemoteDescription(sessionDescription);
             } catch (InvalidDescriptionException e) {
                 e.printStackTrace();
@@ -340,14 +328,13 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onDisconnect() {
-        Toast.makeText(this, "Disconnected from server", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "예기치못한 오류가 발생하였습니다. 양쪽 앱을 재시작시켜 주세요.", Toast.LENGTH_LONG).show();
         updateVideoView(false);
         try {
             mStreamSet = null;
             mRtcSession.stop();
             mRtcSession = null;
             mSignalingChannel = null;
-            video_area.setBackgroundColor(Color.WHITE);
         } catch (NullPointerException e) {
         }
     }
@@ -720,18 +707,10 @@ public class MainActivity extends AppCompatActivity implements
     }
     @Override
     protected void onPause() {
-        try {
-            for(int i = 0; i < client.length;i++) {
-                if(client[i] != null) client[i].disconnect();
-            }
-            if(mRtcSession != null) mRtcSession.stop();
-            mPeerChannel = null;
-            updateVideoView(false);
-            mSessionInput.setEnabled(true);
-            mJoinButton.setEnabled(true);
-            mCallButton.setEnabled(false);
-        } catch (Exception e) {
+        for (int i = 0; i < client.length; i++) {
+            if (client[i] != null) client[i].disconnect();
         }
+        updateVideoView(false);
         super.onPause();
     }
 

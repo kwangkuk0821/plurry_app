@@ -108,13 +108,13 @@
                         android:max="8"
                         android:progress="0" />
 
-                    <Button
+                    <ImageButton
                         android:id="@+id/feed_btn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:onClick="mOnClick"
-                        android:text="@string/feed_button"
-                        android:textSize="20sp" />
+                        android:scaleType="fitXY"
+                        android:src="@drawable/feed"/>
 
                 </LinearLayout>
 
