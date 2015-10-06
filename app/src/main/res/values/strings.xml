@@ -10,23 +10,16 @@
     <string name="title_activity_login">Login</string>
     <string name="title_activity_sign_up">SignUp</string>
     <string name="title_activity_group_list">GroupList</string>
-    <string name="open_drawer">Open drawer</string>
-    <string name="close_drawer">Close drawer</string>
     <string name="title_activity_schedule">Schedule</string>
     <string name="title_activity_add_products">AddProducts</string>
     <string name="title_activity_create_group">CreateGroup</string>
     <string name="title_activity_create_schedule">CreateSchedule</string>
 
-    <string name="mute_audio">Mute Audio</string>
-    <string name="muted_audio">Muted Audio</string>
-    <string name="enable_audio">Enable Audio</string>
-    <string name="enabled_audio">Enabled Audio</string>
+    <string name="mute_audio">음소거</string>
+    <string name="enable_audio">음소거 해제</string>
 
-    <string name="mute_video">Mute Video</string>
-    <string name="muted_video">Muted Video</string>
-
-    <string name="enable_video">Enable Video</string>
-    <string name="enabled_video">Enabled Video</string>
+    <string name="mute_video">영상 끄기</string>
+    <string name="enable_video">영상 켜기</string>
     <!-- Skylink Api Key-->
     <string name="app_key">cfcdbaea-aaaa-4f30-84a7-1726350d97b9</string>
     <string name="app_secret">ef21ovuqw8doy</string>

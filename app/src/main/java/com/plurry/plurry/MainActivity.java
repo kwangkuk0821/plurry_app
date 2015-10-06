@@ -156,17 +156,11 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         toggleAudioButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 // If audio is enabled, mute audio and if audio is enabled, mute it
                 audioMuted = !audioMuted;
-
                 if (audioMuted) {
-                    Toast.makeText(this_activity, getString(R.string.muted_audio),
-                            Toast.LENGTH_SHORT).show();
                     toggleAudioButton.setText(getString(R.string.enable_audio));
                 } else {
-                    Toast.makeText(this_activity, getString(R.string.enabled_audio),
-                            Toast.LENGTH_SHORT).show();
                     toggleAudioButton.setText(getString(R.string.mute_audio));
                 }
 
@@ -177,17 +171,11 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         toggleVideoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 // If video is enabled, mute video and if video is enabled, mute it
                 videoMuted = !videoMuted;
-
                 if (videoMuted) {
-                    Toast.makeText(this_activity, getString(R.string.muted_video),
-                            Toast.LENGTH_SHORT).show();
                     toggleVideoButton.setText(getString(R.string.enable_video));
                 } else {
-                    Toast.makeText(this_activity, getString(R.string.enabled_video),
-                            Toast.LENGTH_SHORT).show();
                     toggleVideoButton.setText(getString(R.string.mute_video));
                 }
 
@@ -262,7 +250,6 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         if (isSuccess) {
             toggleAudioButton.setVisibility(View.VISIBLE);
             toggleVideoButton.setVisibility(View.VISIBLE);
-            Toast.makeText(this_activity, "Connected to room " + roomName + " as " + MY_USER_NAME, Toast.LENGTH_SHORT).show();
         } else {
             Log.e(TAG, "Skylink Failed " + message);
         }
