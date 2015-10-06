@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Plurry</string>
+    <string name="app_name">Plurry Controller</string>
 
     <string name="title">Plurry!</string>
     <string name="feed_button">밥 주기</string>
@@ -14,6 +14,9 @@
     <string name="title_activity_add_products">AddProducts</string>
     <string name="title_activity_create_group">CreateGroup</string>
     <string name="title_activity_create_schedule">CreateSchedule</string>
+
+    <string name="close_drawer">Close Drawer</string>
+    <string name="open_drawer">Open Drawer</string>
 
     <string name="mute_audio">음소거</string>
     <string name="enable_audio">음소거 해제</string>
