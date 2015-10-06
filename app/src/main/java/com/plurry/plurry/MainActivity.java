@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     private boolean videoMuted;
     private boolean connected;
     private AudioRouter audioRouter;
+
     //Variable End
 
     @Override
