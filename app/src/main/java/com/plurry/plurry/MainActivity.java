@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     private String token;
     private final int feed_product = 1;
     private final int move_product = 2;
+    private final int phone_product = 3;
     private Activity this_activity = this;
     private String group;
     private SharedPreferences pref;
@@ -124,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     private void joinRoom(String phone, String session) {
         if(session.isEmpty()) return;
 
-        String toast = "스마트폰 코드 [" + phone + "] 과 연결 되었습니다.";
+        String toast = "스마트폰 코드 [" + phone + "] 과 연결 중 입니다.";
         Toast.makeText(this_activity, toast, Toast.LENGTH_SHORT).show();
 
         String appKey = getString(R.string.app_key);
@@ -551,36 +552,70 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         List<BasicNameValuePair> extraHeaders = Arrays.asList(
                 new BasicNameValuePair("Cookie", "session=" + token)
         );
-        client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
-            @Override
-            public void onConnect() {
-                Log.d("Connect", "Connected!");
-                Log.d("Connect2", client.toString());
-            }
+        if(type == phone_product) {
+            client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
+                @Override
+                public void onConnect() {
+                    Log.d("Connect", "Connected!");
+                    client[phone_product].send("remote on");
+                }
 
-            @Override
-            public void onMessage(String message) {
-                Log.d("Message", String.format("Got string message! %s", message));
-            }
+                @Override
+                public void onMessage(String message) {
+                    Log.d("Message", String.format("Got string message! %s", message));
+                }
 
-            @Override
-            public void onMessage(byte[] data) {
-                Log.d("byte", String.format("Got binary message! %s", ("" + data)));
-            }
+                @Override
+                public void onMessage(byte[] data) {
+                    Log.d("byte", String.format("Got binary message! %s", ("" + data)));
+                }
 
-            @Override
-            public void onDisconnect(int code, String reason) {
-                Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
-            }
+                @Override
+                public void onDisconnect(int code, String reason) {
+                    Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
+                }
 
-            @Override
-            public void onError(Exception error) {
-                Log.e("Error", "Error!", error);
-            }
+                @Override
+                public void onError(Exception error) {
+                    Log.e("Error", "Error!", error);
+                }
 
-        }, extraHeaders);
+            }, extraHeaders);
 
-        client[type].connect();
+            client[type].connect();
+        } else {
+            client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
+                @Override
+                public void onConnect() {
+                    Log.d("Connect", "Connected!");
+                    Log.d("Connect2", client.toString());
+                }
+
+                @Override
+                public void onMessage(String message) {
+                    Log.e("Message", String.format("Got string message! %s", message));
+                }
+
+                @Override
+                public void onMessage(byte[] data) {
+                    Log.d("byte", String.format("Got binary message! %s", ("" + data)));
+                }
+
+                @Override
+                public void onDisconnect(int code, String reason) {
+                    Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
+                }
+
+                @Override
+                public void onError(Exception error) {
+                    Log.e("Error", "Error!", error);
+                }
+
+            }, extraHeaders);
+
+            client[type].connect();
+        }
+
     }
 
     public class productTask extends RequestTask {
@@ -616,12 +651,11 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                 try {
                     resultJSON = new JSONObject(data);
                     products = resultJSON.getJSONArray("data");
-                    client = new WebSocketClient[3];
+                    client = new WebSocketClient[4];
                     for(int i = 0; i < products.length();i++) {
                         JSONObject product = (JSONObject) products.get(i);
-                        if(product.getInt("product_type") == 1 || product.getInt("product_type") == 2) {
-                            websocket(product.getString("product_id"), product.getInt("product_type"));
-                        } else if(product.getInt("product_type") == 3) {
+                        websocket(product.getString("product_id"), product.getInt("product_type"));
+                        if(product.getInt("product_type") == 3) {
                             String phone = product.getString("code");
                             String session = product.getString("owr_session_id");
                             joinRoom(phone ,session);
