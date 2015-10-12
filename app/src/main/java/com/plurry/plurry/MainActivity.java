@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -123,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     }
 
     private void joinRoom(String phone, String session) {
-        if(session.isEmpty()) return;
+        if (session.isEmpty()) return;
 
         String toast = "스마트폰 코드 [" + phone + "] 과 연결 중 입니다.";
         Toast.makeText(this_activity, toast, Toast.LENGTH_SHORT).show();
@@ -222,8 +223,8 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     public void onStop() {
         //close the connection when the fragment is detached, so the streams are not open.
         super.onStop();
-        for(int i = 0; i < client.length;i++) {
-            if(client[i] != null) client[i].disconnect();
+        for (int i = 0; i < client.length; i++) {
+            if (client[i] != null) client[i].disconnect();
         }
         if (skylinkConnection != null && connected) {
             skylinkConnection.disconnectFromRoom();
@@ -468,8 +469,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                 mDrawerLayout,
                 toolbar,
                 R.string.open_drawer,
-                R.string.close_drawer)
-        {
+                R.string.close_drawer) {
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
                 toolbar.setTitle(mTitle);
@@ -484,7 +484,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                 syncState();
             }
         };
-        final String[] navItems = { "control", "schedule", "new product" };
+        final String[] navItems = {"control", "schedule", "new product"};
         mDrawerLayout.setDrawerListener(mDrawerToggle);
 
         navList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, navItems));
@@ -514,6 +514,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
             }
         }
     }
+
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
@@ -533,7 +534,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                 try {
                     JSONObject cmd = new JSONObject();
                     cmd.put("cmd", 6);
-                    cmd.put("amount", Integer.toString(progress + 1));
+                    cmd.put("amount", progress + 1);
                     client[feed_product].send(cmd.toString());
                 } catch (JSONException e) {
                     Log.e("MYAPP", "unexpected JSON exception", e);
@@ -552,7 +553,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         List<BasicNameValuePair> extraHeaders = Arrays.asList(
                 new BasicNameValuePair("Cookie", "session=" + token)
         );
-        if(type == phone_product) {
+        if (type == phone_product) {
             client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
                 @Override
                 public void onConnect() {
@@ -643,7 +644,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         protected void onPostExecute(String data) {
             dataPending.dismiss();
             // result is what you got from your connection
-            if(!data.equals("fail")) {
+            if (!data.equals("fail")) {
                 JSONObject resultJSON = null;
                 String result = null;
                 String what = null;
@@ -652,16 +653,20 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                     resultJSON = new JSONObject(data);
                     products = resultJSON.getJSONArray("data");
                     client = new WebSocketClient[4];
-                    for(int i = 0; i < products.length();i++) {
+                    for (int i = 0; i < products.length(); i++) {
                         JSONObject product = (JSONObject) products.get(i);
                         websocket(product.getString("product_id"), product.getInt("product_type"));
-                        if(product.getInt("product_type") == 3) {
+                        if (product.getInt("product_type") == 1) {
+                            Intent intent = new Intent(this_activity, websocketService.class);
+                            intent.putExtra("product_id", product.getString("product_id"));
+                            startService(intent);
+                        }
+                        if (product.getInt("product_type") == 3) {
                             String phone = product.getString("code");
                             String session = product.getString("owr_session_id");
-                            joinRoom(phone ,session);
+                            joinRoom(phone, session);
                         }
                     }
-
                     removeProductView();
                     Log.d("task_result", "result = " + resultJSON);
                     Log.d("websockes", "result = " + client);
@@ -699,7 +704,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         protected void onPostExecute(String data) {
             logoutPending.dismiss();
             // result is what you got from your connection
-            if(!data.equals("fail")) {
+            if (!data.equals("fail")) {
                 JSONObject resultJSON = null;
                 String result = null;
                 String what = null;
@@ -707,7 +712,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                     resultJSON = new JSONObject(data);
                     result = resultJSON.getString("result");
                     what = resultJSON.getString("what");
-                    if(result.equals("success") && what.equals("logout")) {
+                    if (result.equals("success") && what.equals("logout")) {
                         removePreferences("secret_token");
                         Intent i = new Intent(this_activity, Login.class);
                         startActivity(i);
@@ -726,7 +731,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
     }
 
     public void removeProductView() {
-        if(client[feed_product] == null) {
+        if (client[feed_product] == null) {
             feed_area.removeAllViews();
         } else {
             feed_area.setVisibility(View.VISIBLE);
@@ -747,13 +752,14 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
             });
 
         }
-        if(client[move_product] == null) {
+        if (client[move_product] == null) {
             joystick_area.removeAllViews();
         } else {
             joystick_area.setVisibility(View.VISIBLE);
             joystick.setOnJoystickMoveListener(new OnJoystickMoveListener() {
                 int defaultVelocity = 180;
                 int maxVelocity = 255;
+
                 @Override
                 public void onValueChanged(int angle, int power, int direction, float x, float y, float width, float height) {
                     try {
@@ -761,30 +767,30 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                         JSONObject right = new JSONObject();
                         left.put("cmd", 8);
                         right.put("cmd", 9);
-                        int maxX = (int)(width * ((float)3/8));
-                        int maxY = (int)(height * ((float)3/8));
+                        int maxX = (int) (width * ((float) 3 / 8));
+                        int maxY = (int) (height * ((float) 3 / 8));
 
                         Log.d("angle", "angle : " + angle);
                         int left_speed;
                         int right_speed;
-                        if(angle == 0) {
+                        if (angle == 0) {
                             left_speed = 0;
                             right_speed = 0;
-                        } else if(angle <= 60 && angle > -60) {
+                        } else if (angle <= 60 && angle > -60) {
                             int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100))) * -1;
                             int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100)));
-                            if(x > 0) {
+                            if (x > 0) {
                                 left_speed = defaultVelocity + plusY;
                                 right_speed = defaultVelocity + plusY + plusX;
                             } else {
                                 left_speed = defaultVelocity + plusY + plusX;
                                 right_speed = defaultVelocity + plusY;
                             }
-                        } else if(angle > 120 || angle <= -120) {
+                        } else if (angle > 120 || angle <= -120) {
                             int plusX = (int) Math.abs(((maxVelocity - defaultVelocity) * (((x / maxX) * 100) / 100)));
                             int plusY = (int) Math.abs(((maxVelocity - defaultVelocity) * (((y / maxY) * 100) / 100))) * -1;
                             Log.d("plusXPlusY", "plusX : " + plusX + " plusY : " + plusY);
-                            if(x > 0) {
+                            if (x > 0) {
                                 left_speed = (defaultVelocity * -1) + plusY;
                                 right_speed = (defaultVelocity * -1) + plusY + plusX;
                             } else {
@@ -792,21 +798,21 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                                 right_speed = (defaultVelocity * -1) + plusY;
                             }
 
-                        } else if(angle > 60 && angle <= 120) {
-                            if(x > (maxX / 2)) {
+                        } else if (angle > 60 && angle <= 120) {
+                            if (x > (maxX / 2)) {
                                 left_speed = 255;
                                 right_speed = -255;
                             } else {
                                 left_speed = 0;
                                 right_speed = 0;
                             }
-                        } else if(angle <= -60 && angle > -120) {
-                            if(Math.abs(x) > (maxX / 2)) {
+                        } else if (angle <= -60 && angle > -120) {
+                            if (Math.abs(x) > (maxX / 2)) {
                                 left_speed = -255;
                                 right_speed = 255;
                             } else {
                                 left_speed = 0;
-                                right_speed =0;
+                                right_speed = 0;
                             }
                         } else {
                             left_speed = 0;
@@ -828,8 +834,8 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
 
     @Override
     protected void onRestart() {
-        for(int i = 0; i < client.length;i++) {
-            if(client[i] != null) client[i].connect();
+        for (int i = 0; i < client.length; i++) {
+            if (client[i] != null) client[i].connect();
         }
         super.onRestart();
     }
@@ -866,6 +872,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
 
         return super.onOptionsItemSelected(item);
     }
+
     //값 불러오기
     public String getPreferences(String key) {
         pref = getSharedPreferences(prefName, MODE_PRIVATE);
