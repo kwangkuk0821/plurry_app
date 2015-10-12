@@ -554,7 +554,7 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                 new BasicNameValuePair("Cookie", "session=" + token)
         );
         if (type == phone_product) {
-            client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
+            client[type] = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/debug/" + product_id), new WebSocketClient.Listener() {
                 @Override
                 public void onConnect() {
                     Log.d("Connect", "Connected!");
@@ -564,6 +564,9 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
                 @Override
                 public void onMessage(String message) {
                     Log.d("Message", String.format("Got string message! %s", message));
+                    if(message.equals("station on")) {
+                        client[phone_product].send("remote on");
+                    }
                 }
 
                 @Override
