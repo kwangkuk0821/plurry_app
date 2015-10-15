@@ -30,9 +30,12 @@ public class websocketService extends Service {
     private SharedPreferences pref;
     private String prefName = "session";
     private WebSocketClient client = null;
+    private WebSocketClient cmd_client = null;
     private String product_id = null;
-    private final int feedNotificationNumber = (int)((Math.random() * 3000) + 1);
-    private final int batteryNotificationNumber = (int)((Math.random() * 3000) + 3001);
+    private int feedNotificationNumber;
+    private int batteryNotificationNumber;
+    private int currentBattery;
+    private int remainNotificationNumber;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -41,7 +44,42 @@ public class websocketService extends Service {
 
     @Override
     public void onCreate() {
-        if(product_id == null) return;
+        if (product_id == null) return;
+        feedNotificationNumber = (int) ((Math.random() * 3000) + 1);
+        batteryNotificationNumber = (int) ((Math.random() * 3000) + 3001);
+        remainNotificationNumber = (int) ((Math.random() * 3000) + 6001);
+        currentBattery = -1;
+
+        cmd_client = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/" + product_id), new WebSocketClient.Listener() {
+            @Override
+            public void onConnect() {
+                Log.d("Connect", "Connected!");
+            }
+
+            @Override
+            public void onMessage(String message) {
+                Log.d("Message", String.format("Got string message! %s", message));
+            }
+
+            @Override
+            public void onMessage(byte[] data) {
+                Log.d("byte", String.format("Got binary message! %s", ("" + data)));
+            }
+
+            @Override
+            public void onDisconnect(int code, String reason) {
+                Log.d("Disconnect", String.format("Disconnected! Code: %d Reason: %s", code, reason));
+            }
+
+            @Override
+            public void onError(Exception error) {
+                Log.e("Error", "Error!", error);
+            }
+
+        }, null);
+
+        cmd_client.connect();
+
         client = new WebSocketClient(URI.create("ws://plurry.cycorld.com:3000/ws/debug/" + product_id), new WebSocketClient.Listener() {
             @Override
             public void onConnect() {
@@ -53,18 +91,44 @@ public class websocketService extends Service {
                 Log.e("Message", String.format("Got string message! %s", message));
                 try {
                     JSONObject msg = new JSONObject(message);
-                    if (msg.has("report")) {
+                    if (msg.has("rs")) {
+                        int rs = msg.getInt("rs");
+                        switch (rs) {
+                            case 107:
+                                int amount = msg.getInt("amount");
+                                String remain_notice;
+                                if (amount == 3) {
+                                    remain_notice = "사료가 충분히 남아있습니다.";
+                                } else if (amount == 0) {
+                                    remain_notice = "밥통에 사료가 없습니다.";
+                                } else {
+                                    remain_notice = "밥통에 사료가 " + amount + " / 3 가량 남았습니다.";
+                                }
+                                NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                                Notification.Builder mBuilder = new Notification.Builder(getApplicationContext());
+
+                                mBuilder.setSmallIcon(R.drawable.remain_icon);
+                                mBuilder.setTicker("사료 알림(" + product_id + ")");
+                                mBuilder.setWhen(System.currentTimeMillis());
+                                mBuilder.setContentTitle("사료 알림(" + product_id + ")");
+                                mBuilder.setContentText(remain_notice);
+                                mBuilder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE);
+                                mBuilder.setAutoCancel(true);
+                                nm.cancel(remainNotificationNumber);
+                                nm.notify(remainNotificationNumber, mBuilder.build());
+                                break;
+                        }
+                    } else if (msg.has("report")) {
                         int report = msg.getInt("report");
-                        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+                        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                         Notification.Builder mBuilder = new Notification.Builder(getApplicationContext());
                         switch (report) {
-                            case 201 :
+                            case 201:
                                 int feed_amount = msg.getInt("amount");
                                 long timestamp = msg.getLong("timestamp") - 32400;
-                                Log.e("timestamp", "" + timestamp);
                                 Timestamp stamp = new Timestamp(timestamp);
 
-                                Date date = new Date(timestamp*1000L); // *1000 is to convert seconds to milliseconds
+                                Date date = new Date(timestamp * 1000L); // *1000 is to convert seconds to milliseconds
                                 SimpleDateFormat sdf = new SimpleDateFormat("dd 일 HH 시 mm 분에 " + feed_amount + "(최소 1 ~ 최대 9)만큼 밥을 주었습니다."); // the format of your date
                                 sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul")); // give a timezone reference for formating (see comment at the bottom
                                 String formattedDate = sdf.format(date);
@@ -79,33 +143,42 @@ public class websocketService extends Service {
                                 mBuilder.setAutoCancel(true);
                                 nm.cancel(feedNotificationNumber);
                                 nm.notify(feedNotificationNumber, mBuilder.build());
+
+                                JSONObject cmd = new JSONObject();
+                                cmd.put("cmd", 7);
+                                cmd_client.send(cmd.toString());
                                 break;
-                            case 202 :
+                            case 202:
                                 int battery_amount = msg.getInt("amount");
-                                String battery_notice;
-                                int notice_icon = R.drawable.batteryfull;
-                                switch (battery_amount) {
-                                    case 0:
-                                        notice_icon = R.drawable.batterymin;
-                                        break;
-                                    case 1:
-                                        notice_icon = R.drawable.batterymid;
-                                        break;
-                                    case 2:
-                                        notice_icon = R.drawable.batteryfull;
-                                        break;
+                                if (battery_amount != currentBattery || currentBattery == -1) {
+                                    currentBattery = battery_amount;
+                                    String battery_notice;
+                                    int notice_icon = R.drawable.batteryfull;
+                                    switch (battery_amount) {
+                                        case 0:
+                                            notice_icon = R.drawable.batterymin;
+                                            break;
+                                        case 1:
+                                            notice_icon = R.drawable.batterymid;
+                                            break;
+                                        case 2:
+                                            notice_icon = R.drawable.batteryfull;
+                                            break;
+                                    }
+                                    if (battery_amount == 0)
+                                        battery_notice = "밥통의 배터리가 거의 남지 않았습니다.";
+                                    else
+                                        battery_notice = "밥통의 배터리가 " + (battery_amount + 1) + " / 3 만큼 남았습니다.";
+                                    mBuilder.setSmallIcon(notice_icon);
+                                    mBuilder.setTicker(battery_notice);
+                                    mBuilder.setWhen(System.currentTimeMillis());
+                                    mBuilder.setContentTitle("배터리 알림(" + product_id + ")");
+                                    mBuilder.setContentText(battery_notice);
+                                    mBuilder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE);
+                                    mBuilder.setAutoCancel(true);
+                                    nm.cancel(batteryNotificationNumber);
+                                    nm.notify(batteryNotificationNumber, mBuilder.build());
                                 }
-                                if(battery_amount == 0) battery_notice = "밥통의 배터리가 거의 남지 않았습니다.";
-                                else battery_notice = "밥통의 배터리가 " + (battery_amount + 1) + " / 3 만큼 남았습니다.";
-                                mBuilder.setSmallIcon(notice_icon);
-                                mBuilder.setTicker(battery_notice);
-                                mBuilder.setWhen(System.currentTimeMillis());
-                                mBuilder.setContentTitle("배터리 알림(" + product_id + ")");
-                                mBuilder.setContentText(battery_notice);
-                                mBuilder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE);
-                                mBuilder.setAutoCancel(true);
-                                nm.cancel(batteryNotificationNumber);
-                                nm.notify(batteryNotificationNumber, mBuilder.build());
                                 break;
                         }
                     }
@@ -129,15 +202,23 @@ public class websocketService extends Service {
             }
 
         }, null);
+
         client.connect();
+        startForeground(1, new Notification());
         super.onCreate();
     }
 
     @Override
     public void onDestroy() {
         Log.e("WebsocketService", "onDestory");
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         client.disconnect();
         client = null;
+        cmd_client.disconnect();
+        cmd_client = null;
+        nm.cancel(batteryNotificationNumber);
+        nm.cancel(feedNotificationNumber);
+        nm.cancel(remainNotificationNumber);
         super.onDestroy();
     }
 
@@ -145,8 +226,8 @@ public class websocketService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e("WebsocketService", "onStartCommand");
         Bundle extras = intent.getExtras();
-        if(extras != null) product_id = extras.getString("product_id");
-        if(client == null) onCreate();
+        if (extras != null) product_id = extras.getString("product_id");
+        if (client == null) onCreate();
         return START_STICKY;
     }
 

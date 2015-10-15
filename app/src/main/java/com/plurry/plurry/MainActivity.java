@@ -116,7 +116,6 @@ public class MainActivity extends AppCompatActivity implements LifeCycleListener
         feed_text = (TextView) findViewById(R.id.feed_text);
         joystick = (JoystickView) findViewById(R.id.joystickView);
 
-
         parentFragment = (LinearLayout) findViewById(R.id.ll_video_call);
         toggleAudioButton = (Button) findViewById(R.id.toggle_audio);
         toggleVideoButton = (Button) findViewById(R.id.toggle_video);
