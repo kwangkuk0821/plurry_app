@@ -157,7 +157,6 @@ public class ScheduleList extends AppCompatActivity {
         @Override
         public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
             final int mypos = position;
-            Toast.makeText(this_activity, "click " + position, Toast.LENGTH_SHORT).show();
             AlertDialog.Builder alert = new AlertDialog.Builder(this_activity);
             alert.setTitle("스케쥴(Schedule)");
             alert.setCancelable(false);
